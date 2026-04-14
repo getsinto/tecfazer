@@ -13,6 +13,9 @@ import ContactSection from '@/components/sections/ContactSection'
 import db from '@/lib/db'
 import { buildMetadata } from '@/lib/seo'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // Revalidate every hour
+
 export async function generateMetadata({ params }: { params: { locale: string } }) {
   return buildMetadata({
     locale: params.locale,
