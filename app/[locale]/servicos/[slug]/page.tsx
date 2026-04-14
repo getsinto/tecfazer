@@ -33,15 +33,9 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const services = await db.service.findMany({
-    where: { isActive: true },
-    select: { slug: true },
-  })
-
-  return services.flatMap((service) => [
-    { locale: 'pt', slug: service.slug },
-    { locale: 'en', slug: service.slug },
-  ])
+  // Return empty array to prevent static generation at build time
+  // Pages will be generated dynamically at request time
+  return []
 }
 
 export default async function ServiceDetailPage({ 

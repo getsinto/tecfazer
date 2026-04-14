@@ -33,14 +33,9 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const projects = await db.project.findMany({
-    select: { slug: true },
-  })
-
-  return projects.flatMap((project) => [
-    { locale: 'pt', slug: project.slug },
-    { locale: 'en', slug: project.slug },
-  ])
+  // Return empty array to prevent static generation at build time
+  // Pages will be generated dynamically at request time
+  return []
 }
 
 export default async function ProjectDetailPage({ 
