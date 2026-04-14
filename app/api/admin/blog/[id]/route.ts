@@ -3,6 +3,8 @@ import { z } from 'zod'
 import prisma from '@/lib/db'
 import { verifyAdminSession } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 const blogPostUpdateSchema = z.object({
   slug: z.string().min(1).optional(),
   titlePt: z.string().min(1).optional(),
