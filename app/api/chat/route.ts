@@ -2,11 +2,19 @@ import { OpenAIStream, StreamingTextResponse } from 'ai'
 import OpenAI from 'openai'
 import { NextRequest } from 'next/server'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+// Lazy initialization to avoid build-time errors
+let openaiClient: OpenAI | null = null
+function getOpenAIClient() {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || '',
+    })
+  }
+  return openaiClient
+}
 
 const systemPrompts = {
   pt: `Você é um assistente virtual da Tec Fazer, uma empresa de tecnologia portuguesa baseada em Mafra, Lisboa.
@@ -102,6 +110,7 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = systemPrompts[locale as keyof typeof systemPrompts] || systemPrompts.pt
 
+    const openai = getOpenAIClient()
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       stream: true,
