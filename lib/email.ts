@@ -1,6 +1,13 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization to avoid build-time errors
+let resendClient: Resend | null = null
+function getResendClient() {
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY || '')
+  }
+  return resendClient
+}
 
 export async function sendEmail(
   to: string,
@@ -9,6 +16,7 @@ export async function sendEmail(
   from: string = 'Tec Fazer <noreply@tecfazer.pt>'
 ): Promise<void> {
   try {
+    const resend = getResendClient()
     await resend.emails.send({
       from,
       to,
