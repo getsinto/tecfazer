@@ -8,8 +8,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Tec Fazer',
-  description: 'Building The Future',
+  title: 'Tec Fazer — Desenvolvimento Web e Tecnologia em Portugal',
+  description: 'Empresa de tecnologia em Mafra Lisboa especializada em desenvolvimento web, mobile, cloud e marketing digital.',
 }
 
 export default function RootLayout({
@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt" suppressHydrationWarning>
       <body className={inter.className}>
         {children}
       </body>
