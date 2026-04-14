@@ -1,0 +1,486 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  EDITOR
+  SUPPORT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SenderType {
+  CLIENT
+  ADMIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
+enum ReviewSource {
+  DIRECT
+  GOOGLE
+  LINKEDIN
+}
+
+enum NotificationType {
+  NEW_LEAD
+  NEW_ORDER
+  NEW_CHAT_ESCALATION
+  NEW_REVIEW
+  NEW_TICKET
+  NEW_COMMENT
+  SYSTEM_ALERT
+}
+
+model User {
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  hashedPassword String
+  role           UserRole       @default(EDITOR)
+  blogPosts      BlogPost[]
+  notifications  Notification[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Service {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  category      String
+  titlePt       String
+  titleEn       String
+  shortDescPt   String
+  shortDescEn   String
+  fullDescPt    String   @db.Text
+  fullDescEn    String   @db.Text
+  icon          String
+  technologies  String[]
+  processSteps  Json
+  faqs          Json
+  featuredImage String?
+  metaTitlePt   String?
+  metaTitleEn   String?
+  metaDescPt    String?
+  metaDescEn    String?
+  isActive      Boolean  @default(true)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category, isActive])
+}
+
+model Project {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  title         String
+  categories    String[]
+  descriptionPt String      @db.Text
+  descriptionEn String      @db.Text
+  challengePt   String?     @db.Text
+  challengeEn   String?     @db.Text
+  solutionPt    String?     @db.Text
+  solutionEn    String?     @db.Text
+  resultsPt     String?     @db.Text
+  resultsEn     String?     @db.Text
+  technologies  String[]
+  clientCountry String
+  liveUrl       String?
+  images        String[]
+  beforeImages  String[]    @default([])
+  afterImages   String[]    @default([])
+  metrics       Json?
+  videoUrl      String?
+  isFeatured    Boolean     @default(false)
+  isCaseStudy   Boolean     @default(false)
+  testimonialId String?
+  duration      String?
+  teamSize      Int?
+  budgetRange   String?
+  clientUserId  String?
+  clientUser    ClientUser? @relation(fields: [clientUserId], references: [id])
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([isFeatured, isCaseStudy])
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  clientName  String
+  company     String
+  country     String
+  photo       String?
+  rating      Int
+  reviewPt    String   @db.Text
+  reviewEn    String   @db.Text
+  serviceId   String?
+  date        DateTime @default(now())
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PricingPlan {
+  id                   String        @id @default(cuid())
+  slug                 String        @unique
+  namePt               String
+  nameEn               String
+  monthlyPrice         Decimal
+  annualPrice          Decimal
+  currency             String        @default("EUR")
+  features             Json
+  isPopular            Boolean       @default(false)
+  stripePriceIdMonthly String?
+  stripePriceIdAnnual  String?
+  ctaTextPt            String
+  ctaTextEn            String
+  isActive             Boolean       @default(true)
+  order                Int           @default(0)
+  orders               Order[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+model BlogPost {
+  id                 String        @id @default(cuid())
+  slug               String        @unique
+  titlePt            String
+  titleEn            String
+  excerptPt          String        @db.Text
+  excerptEn          String        @db.Text
+  bodyPt             Json
+  bodyEn             Json
+  authorId           String
+  author             User          @relation(fields: [authorId], references: [id])
+  categories         String[]
+  tags               String[]
+  featuredImage      String?
+  readingTimeMinutes Int           @default(5)
+  metaTitlePt        String?
+  metaTitleEn        String?
+  metaDescPt         String?
+  metaDescEn         String?
+  isPublished        Boolean       @default(false)
+  publishedAt        DateTime?
+  viewCount          Int           @default(0)
+  comments           BlogComment[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([isPublished, publishedAt])
+}
+
+model BlogComment {
+  id          String        @id @default(cuid())
+  postId      String
+  post        BlogPost      @relation(fields: [postId], references: [id])
+  authorName  String
+  authorEmail String
+  content     String        @db.Text
+  isApproved  Boolean       @default(false)
+  parentId    String?
+  parent      BlogComment?  @relation("Replies", fields: [parentId], references: [id])
+  replies     BlogComment[] @relation("Replies")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  rolePt    String
+  roleEn    String
+  bioPt     String   @db.Text
+  bioEn     String   @db.Text
+  photo     String?
+  skills    String[]
+  linkedIn  String?
+  github    String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id              String     @id @default(cuid())
+  name            String
+  email           String
+  phone           String?
+  company         String?
+  serviceInterest String?
+  budgetRange     String?
+  timeline        String?
+  message         String?    @db.Text
+  status          LeadStatus @default(NEW)
+  source          String     @default("WEBSITE")
+  estimatorData   Json?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model Order {
+  id                   String       @id @default(cuid())
+  customerEmail        String
+  customerName         String
+  planId               String
+  plan                 PricingPlan  @relation(fields: [planId], references: [id])
+  stripeSessionId      String?      @unique
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  amount               Decimal
+  currency             String       @default("EUR")
+  billingCycle         BillingCycle
+  status               OrderStatus  @default(PENDING)
+  paidAt               DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model ChatLog {
+  id          String   @id @default(cuid())
+  sessionId   String   @unique
+  messages    Json
+  userEmail   String?
+  isEscalated Boolean  @default(false)
+  locale      String   @default("pt")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSettings {
+  id                String   @id @default(cuid())
+  identifier        String   @unique @default("MAIN")
+  siteTitlePt       String
+  siteTitleEn       String
+  metaDescriptionPt String   @db.Text
+  metaDescriptionEn String   @db.Text
+  logoUrl           String?
+  faviconUrl        String?
+  phone             String
+  address           String
+  email             String
+  socialLinks       Json
+  googleAnalyticsId String?
+  maintenanceMode   Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+}
+
+model ClientUser {
+  id                String           @id @default(cuid())
+  name              String
+  email             String           @unique
+  hashedPassword    String
+  companyName       String?
+  phone             String?
+  avatarUrl         String?
+  stripeCustomerId  String?
+  emailVerified     Boolean          @default(false)
+  verificationToken String?
+  projects          Project[]
+  documents         ClientDocument[]
+  tickets           SupportTicket[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+model ClientDocument {
+  id           String     @id @default(cuid())
+  clientUserId String
+  client       ClientUser @relation(fields: [clientUserId], references: [id])
+  fileName     String
+  fileUrl      String
+  fileType     String
+  fileSize     Int
+  uploadedAt   DateTime   @default(now())
+}
+
+model SupportTicket {
+  id           String          @id @default(cuid())
+  clientUserId String
+  client       ClientUser      @relation(fields: [clientUserId], references: [id])
+  subject      String
+  status       TicketStatus    @default(OPEN)
+  priority     TicketPriority  @default(MEDIUM)
+  messages     TicketMessage[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model TicketMessage {
+  id          String        @id @default(cuid())
+  ticketId    String
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id])
+  senderId    String
+  senderType  SenderType
+  message     String        @db.Text
+  attachments String[]      @default([])
+  createdAt   DateTime      @default(now())
+}
+
+model NewsletterSubscriber {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  localePreference  String    @default("pt")
+  isConfirmed       Boolean   @default(false)
+  confirmationToken String?
+  subscribedAt      DateTime  @default(now())
+  unsubscribedAt    DateTime?
+}
+
+model Campaign {
+  id             String         @id @default(cuid())
+  subjectPt      String
+  subjectEn      String
+  bodyPt         Json
+  bodyEn         Json
+  status         CampaignStatus @default(DRAFT)
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  recipientCount Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model EstimatorConfig {
+  id        String   @id @default(cuid())
+  category  String
+  namePt    String
+  nameEn    String
+  baseCost  Decimal
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id                String       @id @default(cuid())
+  clientName        String
+  clientEmail       String
+  clientCompany     String?
+  clientCountry     String?
+  clientPhoto       String?
+  rating            Int
+  reviewText        String       @db.Text
+  projectType       String?
+  serviceUsed       String?
+  verificationToken String?      @unique
+  isVerified        Boolean      @default(false)
+  isPublished       Boolean      @default(false)
+  source            ReviewSource @default(DIRECT)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model ReviewRequest {
+  id          String    @id @default(cuid())
+  leadId      String
+  clientEmail String
+  token       String    @unique
+  sentAt      DateTime  @default(now())
+  submittedAt DateTime?
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  locale    String
+  referrer  String?
+  userAgent String?
+  country   String?
+  sessionId String?
+  createdAt DateTime @default(now())
+
+  @@index([path, createdAt])
+}
+
+model PageMeta {
+  id            String   @id @default(cuid())
+  path          String   @unique
+  titlePt       String?
+  titleEn       String?
+  descriptionPt String?
+  descriptionEn String?
+  ogImage       String?
+  noIndex       Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+}
+
+model Redirect {
+  id         String   @id @default(cuid())
+  fromPath   String   @unique
+  toPath     String
+  statusCode Int      @default(301)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id                String           @id @default(cuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id])
+  type              NotificationType
+  title             String
+  message           String
+  relatedEntityType String?
+  relatedEntityId   String?
+  isRead            Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+
+  @@index([userId, isRead])
+}
+
+model EmailVerification {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
