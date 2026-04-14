@@ -38,15 +38,9 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const posts = await db.blogPost.findMany({
-    where: { isPublished: true },
-    select: { slug: true },
-  })
-
-  return posts.flatMap((post) => [
-    { locale: 'pt', slug: post.slug },
-    { locale: 'en', slug: post.slug },
-  ])
+  // Return empty array to prevent static generation at build time
+  // Pages will be generated dynamically at request time
+  return []
 }
 
 export default async function BlogPostPage({ 
