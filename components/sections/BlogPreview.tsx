@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Clock, User } from 'lucide-react'
@@ -6,10 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import SectionReveal from '@/components/ui/SectionReveal'
 import db from '@/lib/db'
-import { format } from 'date-fns'
 
 export default async function BlogPreview() {
-  const t = useTranslations('blog')
+  const t = await getTranslations('blog')
 
   const posts = await db.blogPost.findMany({
     where: { isPublished: true },

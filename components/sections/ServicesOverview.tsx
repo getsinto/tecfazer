@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import db from '@/lib/db'
 import * as Icons from 'lucide-react'
 
 export default async function ServicesOverview() {
-  const t = useTranslations('services')
+  const t = await getTranslations('services')
   
   const services = await db.service.findMany({
     where: { isActive: true },

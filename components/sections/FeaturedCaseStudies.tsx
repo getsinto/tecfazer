@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
@@ -7,7 +7,7 @@ import SectionReveal from '@/components/ui/SectionReveal'
 import db from '@/lib/db'
 
 export default async function FeaturedCaseStudies() {
-  const t = useTranslations('caseStudy')
+  const t = await getTranslations('caseStudy')
 
   const caseStudies = await db.project.findMany({
     where: {
