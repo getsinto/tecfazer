@@ -7,6 +7,9 @@ import { ArrowLeft, Check, ChevronDown } from 'lucide-react'
 import db from '@/lib/db'
 import { buildMetadata } from '@/lib/seo'
 
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
+
 export async function generateMetadata({ 
   params 
 }: { 
