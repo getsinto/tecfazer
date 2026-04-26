@@ -2,11 +2,15 @@ import { getTranslations } from 'next-intl/server'
 import { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Calendar, Clock, User, Search } from 'lucide-react'
+import { Calendar, Clock, User, Search, BookOpen, TrendingUp, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR, enUS } from 'date-fns/locale'
-import db from '@/lib/db'
+import { getDbClient } from '@/lib/db'
 import { buildMetadata } from '@/lib/seo'
+import SectionReveal from '@/components/ui/SectionReveal'
+import { Button } from '@/components/ui/button'
+
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   return buildMetadata({
@@ -28,194 +32,215 @@ export default async function BlogPage({
 }) {
   const t = await getTranslations('blog')
   
-  // Build query filters
-  const where: any = { isPublished: true }
+  let posts: any[] = []
+  let uniqueCategories: string[] = []
   
-  if (searchParams.category) {
-    where.categories = { has: searchParams.category }
-  }
-  
-  if (searchParams.search) {
-    where.OR = [
-      { titlePt: { contains: searchParams.search, mode: 'insensitive' } },
-      { titleEn: { contains: searchParams.search, mode: 'insensitive' } },
-      { excerptPt: { contains: searchParams.search, mode: 'insensitive' } },
-      { excerptEn: { contains: searchParams.search, mode: 'insensitive' } },
-    ]
-  }
+  try {
+    const db = getDbClient()
+    
+    const where: any = { isPublished: true }
+    
+    if (searchParams.category) {
+      where.categories = { has: searchParams.category }
+    }
+    
+    if (searchParams.search) {
+      where.OR = [
+        { titlePt: { contains: searchParams.search, mode: 'insensitive' } },
+        { titleEn: { contains: searchParams.search, mode: 'insensitive' } },
+        { excerptPt: { contains: searchParams.search, mode: 'insensitive' } },
+        { excerptEn: { contains: searchParams.search, mode: 'insensitive' } },
+      ]
+    }
 
-  // Fetch blog posts
-  const posts = await db.blogPost.findMany({
-    where,
-    include: {
-      author: {
-        select: {
-          name: true,
+    posts = await db.blogPost.findMany({
+      where,
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
         },
       },
-    },
-    orderBy: { publishedAt: 'desc' },
-  }).catch(() => [])
+      orderBy: { publishedAt: 'desc' },
+    })
 
-  // Get all unique categories
-  const allPosts = await db.blogPost.findMany({
-    where: { isPublished: true },
-    select: { categories: true },
-  }).catch(() => [])
-  
-  const allCategories = allPosts.flatMap((p) => p.categories)
-  const uniqueCategories = Array.from(new Set(allCategories))
+    const allPosts = await db.blogPost.findMany({
+      where: { isPublished: true },
+      select: { categories: true },
+    })
+    
+    const allCategories = allPosts.flatMap((p) => p.categories)
+    uniqueCategories = Array.from(new Set(allCategories))
+  } catch (error) {
+    console.error('Database not available:', error)
+  }
 
   const dateLocale = params.locale === 'pt' ? ptBR : enUS
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-teal/10 to-brand-orange/10" />
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-brand-teal to-brand-orange bg-clip-text text-transparent">
-              {params.locale === 'pt' ? 'Blog' : 'Blog'}
-            </h1>
-            <p className="text-xl text-gray-600">
-              {params.locale === 'pt' 
-                ? 'Insights, tendências e conhecimento sobre tecnologia'
-                : 'Insights, trends and knowledge about technology'}
-            </p>
-          </div>
+    <div className="flex flex-col">
+      {/* Premium Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-brand-teal to-brand-orange py-32">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        
+        <div className="container relative z-10 mx-auto px-4">
+          <SectionReveal>
+            <div className="mx-auto max-w-4xl text-center">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                <BookOpen className="h-4 w-4" />
+                {params.locale === 'pt' ? 'Conhecimento & Insights' : 'Knowledge & Insights'}
+              </div>
+              <h1 className="mb-6 text-5xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl">
+                {params.locale === 'pt' ? 'Blog' : 'Blog'}
+              </h1>
+              <p className="text-xl text-white/90 md:text-2xl">
+                {params.locale === 'pt' 
+                  ? 'Insights, tendências e conhecimento sobre tecnologia'
+                  : 'Insights, trends and knowledge about technology'}
+              </p>
+            </div>
+          </SectionReveal>
         </div>
       </section>
 
       {/* Search and Filter */}
-      <section className="py-8 border-b">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Search Bar */}
-            <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder={params.locale === 'pt' ? 'Pesquisar artigos...' : 'Search articles...'}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-brand-teal focus:outline-none"
-              />
-            </div>
+      {uniqueCategories.length > 0 && (
+        <section className="border-b bg-white py-8 sticky top-0 z-40 shadow-sm">
+          <div className="container mx-auto px-4">
+            <div className="mx-auto max-w-4xl">
+              {/* Search Bar */}
+              <div className="relative mb-6">
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder={params.locale === 'pt' ? 'Pesquisar artigos...' : 'Search articles...'}
+                  className="w-full rounded-xl border-2 border-slate-200 py-3 pl-12 pr-4 transition-all focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
+                />
+              </div>
 
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Link
-                href={`/${params.locale}/blog`}
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  !searchParams.category
-                    ? 'bg-gradient-to-r from-brand-teal to-brand-orange text-white'
-                    : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-brand-teal'
-                }`}
-              >
-                {params.locale === 'pt' ? 'Todos' : 'All'}
-              </Link>
-              {uniqueCategories.map((category) => (
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-3 justify-center">
                 <Link
-                  key={category}
-                  href={`/${params.locale}/blog?category=${category}`}
-                  className={`px-6 py-2 rounded-full font-medium transition-all ${
-                    searchParams.category === category
-                      ? 'bg-gradient-to-r from-brand-teal to-brand-orange text-white'
-                      : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-brand-teal'
+                  href={`/${params.locale}/blog`}
+                  className={`px-6 py-2.5 rounded-full font-medium transition-all ${
+                    !searchParams.category
+                      ? 'bg-gradient-to-r from-brand-teal to-brand-orange text-white shadow-lg'
+                      : 'bg-white border-2 border-slate-200 text-slate-700 hover:border-brand-teal hover:shadow-md'
                   }`}
                 >
-                  {category}
+                  {params.locale === 'pt' ? 'Todos' : 'All'}
                 </Link>
-              ))}
+                {uniqueCategories.map((category) => (
+                  <Link
+                    key={category}
+                    href={`/${params.locale}/blog?category=${category}`}
+                    className={`px-6 py-2.5 rounded-full font-medium transition-all ${
+                      searchParams.category === category
+                        ? 'bg-gradient-to-r from-brand-teal to-brand-orange text-white shadow-lg'
+                        : 'bg-white border-2 border-slate-200 text-slate-700 hover:border-brand-teal hover:shadow-md'
+                    }`}
+                  >
+                    {category}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Blog Posts Grid */}
-      <section className="py-16">
+      <section className="bg-gradient-to-b from-slate-50 to-white py-24">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map((post) => {
-              const title = params.locale === 'pt' ? post.titlePt : post.titleEn
-              const excerpt = params.locale === 'pt' ? post.excerptPt : post.excerptEn
-              const publishedDate = post.publishedAt 
-                ? format(new Date(post.publishedAt), 'PPP', { locale: dateLocale })
-                : ''
+          {posts.length > 0 ? (
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post, index) => {
+                const title = params.locale === 'pt' ? post.titlePt : post.titleEn
+                const excerpt = params.locale === 'pt' ? post.excerptPt : post.excerptEn
+                const publishedDate = post.publishedAt 
+                  ? format(new Date(post.publishedAt), 'PPP', { locale: dateLocale })
+                  : ''
 
-              return (
-                <Link
-                  key={post.id}
-                  href={`/${params.locale}/blog/${post.slug}`}
-                  className="group"
-                >
-                  <article className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 h-full flex flex-col">
-                    {/* Featured Image */}
-                    <div className="relative h-48 overflow-hidden">
-                      {post.featuredImage ? (
-                        <Image
-                          src={post.featuredImage}
-                          alt={title}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-brand-teal to-brand-orange flex items-center justify-center">
-                          <span className="text-white text-4xl font-bold">
-                            {title.charAt(0)}
-                          </span>
+                return (
+                  <SectionReveal key={post.id} delay={index * 0.1}>
+                    <Link
+                      href={`/${params.locale}/blog/${post.slug}`}
+                      className="group block h-full"
+                    >
+                      <article className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                        {/* Featured Image */}
+                        <div className="relative h-56 overflow-hidden">
+                          {post.featuredImage ? (
+                            <Image
+                              src={post.featuredImage}
+                              alt={title}
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-teal to-brand-orange">
+                              <span className="text-6xl font-bold text-white">
+                                {title.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                         </div>
-                      )}
-                    </div>
 
-                    {/* Content */}
-                    <div className="p-6 flex-1 flex flex-col">
-                      {/* Categories */}
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {post.categories.slice(0, 2).map((category) => (
-                          <span
-                            key={category}
-                            className="px-3 py-1 bg-brand-teal/10 text-brand-teal text-xs rounded-full font-medium"
-                          >
-                            {category}
-                          </span>
-                        ))}
-                      </div>
+                        {/* Content */}
+                        <div className="flex flex-1 flex-col p-6">
+                          {/* Categories */}
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            {post.categories.slice(0, 2).map((category: string) => (
+                              <span
+                                key={category}
+                                className="rounded-full bg-brand-teal/10 px-3 py-1 text-xs font-semibold text-brand-teal"
+                              >
+                                {category}
+                              </span>
+                            ))}
+                          </div>
 
-                      {/* Title */}
-                      <h2 className="text-xl font-bold mb-3 group-hover:text-brand-teal transition-colors line-clamp-2">
-                        {title}
-                      </h2>
+                          {/* Title */}
+                          <h2 className="mb-3 text-xl font-bold transition-colors group-hover:text-brand-teal line-clamp-2">
+                            {title}
+                          </h2>
 
-                      {/* Excerpt */}
-                      <p className="text-gray-600 mb-4 line-clamp-3 flex-1">
-                        {excerpt}
-                      </p>
+                          {/* Excerpt */}
+                          <p className="mb-4 flex-1 text-slate-600 line-clamp-3">
+                            {excerpt}
+                          </p>
 
-                      {/* Meta */}
-                      <div className="flex items-center gap-4 text-sm text-gray-500 pt-4 border-t">
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          <span>{post.author.name}</span>
+                          {/* Meta */}
+                          <div className="space-y-2 border-t pt-4">
+                            <div className="flex items-center gap-4 text-sm text-slate-500">
+                              <div className="flex items-center gap-1">
+                                <User className="h-4 w-4" />
+                                <span>{post.author.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                <span>{post.readingTimeMinutes} min</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-slate-500">
+                              <Calendar className="h-4 w-4" />
+                              <span>{publishedDate}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{post.readingTimeMinutes} min</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{publishedDate}</span>
-                      </div>
-                    </div>
-                  </article>
-                </Link>
-              )
-            })}
-          </div>
-
-          {posts.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-gray-500 text-lg">
+                      </article>
+                    </Link>
+                  </SectionReveal>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-slate-50 p-16 text-center">
+              <BookOpen className="mx-auto mb-4 h-16 w-16 text-slate-300" />
+              <p className="text-lg text-muted-foreground">
                 {params.locale === 'pt' 
                   ? 'Nenhum artigo encontrado.' 
                   : 'No articles found.'}
@@ -226,28 +251,34 @@ export default async function BlogPage({
       </section>
 
       {/* Newsletter CTA */}
-      <section className="py-20 bg-gradient-to-r from-brand-teal to-brand-orange">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            {params.locale === 'pt' 
-              ? 'Receba as últimas novidades' 
-              : 'Get the latest updates'}
-          </h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            {params.locale === 'pt'
-              ? 'Subscreva a nossa newsletter e fique a par das últimas tendências'
-              : 'Subscribe to our newsletter and stay up to date with the latest trends'}
-          </p>
-          <div className="max-w-md mx-auto flex gap-3">
-            <input
-              type="email"
-              placeholder={params.locale === 'pt' ? 'O seu email' : 'Your email'}
-              className="flex-1 px-6 py-3 rounded-lg focus:outline-none"
-            />
-            <button className="px-8 py-3 bg-white text-brand-teal font-bold rounded-lg hover:shadow-xl transition-all">
-              {params.locale === 'pt' ? 'Subscrever' : 'Subscribe'}
-            </button>
-          </div>
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 py-24 text-white">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
+        <div className="container relative z-10 mx-auto px-4">
+          <SectionReveal>
+            <div className="mx-auto max-w-3xl text-center">
+              <TrendingUp className="mx-auto mb-6 h-16 w-16 text-brand-orange" />
+              <h2 className="mb-6 text-4xl font-bold md:text-5xl">
+                {params.locale === 'pt' 
+                  ? 'Receba as Últimas Novidades' 
+                  : 'Get the Latest Updates'}
+              </h2>
+              <p className="mb-8 text-xl text-white/80">
+                {params.locale === 'pt'
+                  ? 'Subscreva a nossa newsletter e fique a par das últimas tendências'
+                  : 'Subscribe to our newsletter and stay up to date with the latest trends'}
+              </p>
+              <div className="mx-auto flex max-w-md gap-3">
+                <input
+                  type="email"
+                  placeholder={params.locale === 'pt' ? 'O seu email' : 'Your email'}
+                  className="flex-1 rounded-xl px-6 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-teal"
+                />
+                <Button size="lg" className="bg-brand-orange hover:bg-brand-orange/90">
+                  {params.locale === 'pt' ? 'Subscrever' : 'Subscribe'}
+                </Button>
+              </div>
+            </div>
+          </SectionReveal>
         </div>
       </section>
     </div>
