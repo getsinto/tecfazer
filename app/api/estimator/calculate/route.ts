@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import db from '@/lib/db'
+import { getDbClient } from '@/lib/db'
+
+export const dynamic = 'force-dynamic'
 
 const estimatorSchema = z.object({
   projectType: z.string(),
@@ -30,42 +32,96 @@ const TRAFFIC_COSTS = {
   VERY_HIGH: 3000,
 }
 
+// Fallback configurations if database is not available
+const FALLBACK_PROJECT_TYPES: Record<string, number> = {
+  'Website': 3000,
+  'E-commerce': 8000,
+  'Web Application': 12000,
+  'Mobile App': 15000,
+  'Custom Software': 20000,
+}
+
+const FALLBACK_FEATURES: Record<string, number> = {
+  'User Authentication': 1500,
+  'Payment Integration': 2000,
+  'Admin Dashboard': 2500,
+  'API Integration': 1800,
+  'Real-time Features': 3000,
+  'Multi-language': 1200,
+  'Analytics': 1000,
+  'SEO Optimization': 800,
+  'Performance Optimization': 1500,
+  'Security Audit': 2000,
+}
+
+const FALLBACK_SERVICES: Record<string, number> = {
+  'Hosting Setup': 500,
+  'Domain & SSL': 200,
+  'Maintenance (3 months)': 1500,
+  'Training': 800,
+  'Content Migration': 1200,
+  'Marketing Integration': 1000,
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const data = estimatorSchema.parse(body)
 
-    // Fetch base costs from database
-    const configs = await db.estimatorConfig.findMany({
-      where: { isActive: true },
-    })
-
-    // Calculate base cost from project type
-    const projectTypeConfig = configs.find(
-      (c) => c.category === 'PROJECT_TYPE' && c.nameEn === data.projectType
-    )
-    let baseCost = projectTypeConfig ? Number(projectTypeConfig.baseCost) : 5000
-
-    // Add feature costs
+    let baseCost = 5000
     let featureCost = 0
-    for (const feature of data.features) {
-      const featureConfig = configs.find(
-        (c) => c.category === 'FEATURE' && c.nameEn === feature
-      )
-      if (featureConfig) {
-        featureCost += Number(featureConfig.baseCost)
-      }
-    }
-
-    // Add additional services costs
     let additionalCost = 0
-    if (data.additionalServices) {
-      for (const service of data.additionalServices) {
-        const serviceConfig = configs.find(
-          (c) => c.category === 'ADDITIONAL_SERVICE' && c.nameEn === service
+
+    try {
+      // Try to fetch from database
+      const db = getDbClient()
+      const configs = await db.estimatorConfig.findMany({
+        where: { isActive: true },
+      })
+
+      // Calculate base cost from project type
+      const projectTypeConfig = configs.find(
+        (c) => c.category === 'PROJECT_TYPE' && c.nameEn === data.projectType
+      )
+      baseCost = projectTypeConfig ? Number(projectTypeConfig.baseCost) : (FALLBACK_PROJECT_TYPES[data.projectType] || 5000)
+
+      // Add feature costs
+      for (const feature of data.features) {
+        const featureConfig = configs.find(
+          (c) => c.category === 'FEATURE' && c.nameEn === feature
         )
-        if (serviceConfig) {
-          additionalCost += Number(serviceConfig.baseCost)
+        if (featureConfig) {
+          featureCost += Number(featureConfig.baseCost)
+        } else {
+          featureCost += FALLBACK_FEATURES[feature] || 1000
+        }
+      }
+
+      // Add additional services costs
+      if (data.additionalServices) {
+        for (const service of data.additionalServices) {
+          const serviceConfig = configs.find(
+            (c) => c.category === 'ADDITIONAL_SERVICE' && c.nameEn === service
+          )
+          if (serviceConfig) {
+            additionalCost += Number(serviceConfig.baseCost)
+          } else {
+            additionalCost += FALLBACK_SERVICES[service] || 500
+          }
+        }
+      }
+    } catch (dbError) {
+      // Use fallback values if database is not available
+      console.log('Using fallback estimator values:', dbError)
+      baseCost = FALLBACK_PROJECT_TYPES[data.projectType] || 5000
+      
+      for (const feature of data.features) {
+        featureCost += FALLBACK_FEATURES[feature] || 1000
+      }
+      
+      if (data.additionalServices) {
+        for (const service of data.additionalServices) {
+          additionalCost += FALLBACK_SERVICES[service] || 500
         }
       }
     }
