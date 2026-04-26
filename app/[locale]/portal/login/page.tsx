@@ -34,7 +34,7 @@ export default function PortalLoginPage({ params }: { params: { locale: string }
     setIsLoading(true)
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn('portal', {
         email: data.email,
         password: data.password,
         redirect: false,
