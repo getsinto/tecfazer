@@ -1,16 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Home, Search, ArrowLeft, Compass, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-export default function NotFound() {
-  const params = useParams()
-  const locale = (params?.locale as string) || 'pt'
-  const isPt = locale === 'pt'
-  
+export default function GlobalNotFound() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -32,7 +27,7 @@ export default function NotFound() {
           {/* Floating Badge */}
           <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
             <Compass className="h-4 w-4" />
-            {isPt ? 'Página Não Encontrada' : 'Page Not Found'}
+            Página Não Encontrada
           </div>
 
           {/* 404 Number with Gradient */}
@@ -51,14 +46,12 @@ export default function NotFound() {
 
           {/* Title */}
           <h2 className="mb-4 text-3xl font-bold text-white md:text-5xl">
-            {isPt ? 'Oops! Página Perdida no Espaço' : 'Oops! Page Lost in Space'}
+            Oops! Página Perdida no Espaço
           </h2>
 
           {/* Description */}
           <p className="mb-12 text-lg text-white/80 md:text-xl">
-            {isPt 
-              ? 'A página que procura não existe ou foi movida para outra dimensão.'
-              : "The page you're looking for doesn't exist or has been moved to another dimension."}
+            A página que procura não existe ou foi movida para outra dimensão.
           </p>
 
           {/* Action Buttons */}
@@ -68,9 +61,9 @@ export default function NotFound() {
               size="lg" 
               className="group bg-white text-brand-teal hover:bg-white/90 hover:shadow-2xl"
             >
-              <Link href={`/${locale}`}>
+              <Link href="/pt">
                 <Home className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
-                {isPt ? 'Voltar ao Início' : 'Back to Home'}
+                Voltar ao Início
               </Link>
             </Button>
             
@@ -80,9 +73,9 @@ export default function NotFound() {
               variant="outline" 
               className="group border-2 border-white bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
-              <Link href={`/${locale}/contacto`}>
+              <Link href="/pt/contacto">
                 <Search className="mr-2 h-5 w-5 transition-transform group-hover:rotate-12" />
-                {isPt ? 'Contactar Suporte' : 'Contact Support'}
+                Contactar Suporte
               </Link>
             </Button>
           </div>
@@ -90,56 +83,46 @@ export default function NotFound() {
           {/* Quick Links */}
           <div className="mt-16 rounded-2xl bg-white/10 p-8 backdrop-blur-sm">
             <p className="mb-6 text-sm font-semibold uppercase tracking-wider text-white/60">
-              {isPt ? 'Links Úteis' : 'Useful Links'}
+              Links Úteis
             </p>
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
               <Link 
-                href={`/${locale}/servicos`}
+                href="/pt/servicos"
                 className="group flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 text-white transition-all hover:bg-white/10 hover:shadow-lg"
               >
                 <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                <span className="text-sm font-medium">
-                  {isPt ? 'Serviços' : 'Services'}
-                </span>
+                <span className="text-sm font-medium">Serviços</span>
               </Link>
               
               <Link 
-                href={`/${locale}/portfolio`}
+                href="/pt/portfolio"
                 className="group flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 text-white transition-all hover:bg-white/10 hover:shadow-lg"
               >
                 <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                <span className="text-sm font-medium">
-                  {isPt ? 'Portfolio' : 'Portfolio'}
-                </span>
+                <span className="text-sm font-medium">Portfolio</span>
               </Link>
               
               <Link 
-                href={`/${locale}/blog`}
+                href="/pt/blog"
                 className="group flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 text-white transition-all hover:bg-white/10 hover:shadow-lg"
               >
                 <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                <span className="text-sm font-medium">
-                  {isPt ? 'Blog' : 'Blog'}
-                </span>
+                <span className="text-sm font-medium">Blog</span>
               </Link>
               
               <Link 
-                href={`/${locale}/sobre`}
+                href="/pt/sobre"
                 className="group flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 text-white transition-all hover:bg-white/10 hover:shadow-lg"
               >
                 <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                <span className="text-sm font-medium">
-                  {isPt ? 'Sobre' : 'About'}
-                </span>
+                <span className="text-sm font-medium">Sobre</span>
               </Link>
             </div>
           </div>
 
           {/* Fun Message */}
           <p className="mt-8 text-sm text-white/60">
-            {isPt 
-              ? '💡 Dica: Verifique se o URL está correto ou use a pesquisa acima'
-              : '💡 Tip: Check if the URL is correct or use the search above'}
+            💡 Dica: Verifique se o URL está correto ou use a pesquisa acima
           </p>
         </div>
       </div>
