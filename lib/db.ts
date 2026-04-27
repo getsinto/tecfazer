@@ -20,4 +20,9 @@ export const db =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 
+// Lazy initialization function for runtime use
+export function getDbClient() {
+  return db
+}
+
 export default db
