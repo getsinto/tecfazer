@@ -100,10 +100,20 @@ export default function AdminLeadsPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // TODO: Fetch leads from API
-    // For now, using empty array
-    setLeads([])
-    setIsLoading(false)
+    async function fetchLeads() {
+      try {
+        const response = await fetch('/api/admin/leads')
+        if (response.ok) {
+          const data = await response.json()
+          setLeads(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch leads:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchLeads()
   }, [])
 
   if (isLoading) {
