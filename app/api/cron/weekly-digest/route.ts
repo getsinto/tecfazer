@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import db from '@/lib/db'
 import { sendEmail } from '@/lib/email'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     // Verify cron secret
