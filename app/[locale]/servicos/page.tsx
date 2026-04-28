@@ -5,12 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import SectionReveal from '@/components/ui/SectionReveal'
 import { 
-  ArrowRight, Code, Smartphone, Cloud, Palette, TrendingUp, Brain, Shield, 
-  Wrench, Headphones, Sparkles, Zap, CheckCircle2, Globe, ShoppingCart, 
-  Database, Server, Monitor, Tablet, Search, BarChart3, Mail, Share2,
-  Settings, Users, FileText, Briefcase, Award, Clock, Euro, Star
+  ArrowRight, Sparkles, Zap, CheckCircle2, Award, Clock, Euro, Eye
 } from 'lucide-react'
 import { buildMetadata } from '@/lib/seo'
+import { servicesData } from '@/lib/services-data'
 
 export const dynamic = 'force-dynamic'
 

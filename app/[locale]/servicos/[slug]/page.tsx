@@ -1,268 +1,343 @@
 import { getTranslations } from 'next-intl/server'
-import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Check, ChevronDown } from 'lucide-react'
-import db from '@/lib/db'
+import { notFound } from 'next/navigation'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import SectionReveal from '@/components/ui/SectionReveal'
+import { 
+  ArrowRight, CheckCircle2, Clock, Euro, Star, Award, Shield, 
+  Zap, Users, FileText, Calendar, Phone, Mail, ArrowLeft,
+  Target, Lightbulb, Cog, Truck, HeadphonesIcon
+} from 'lucide-react'
 import { buildMetadata } from '@/lib/seo'
+import { servicesData, type ServiceItem } from '@/lib/services-data'
 
 export const dynamic = 'force-dynamic'
-export const dynamicParams = true
 
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: { locale: string; slug: string } 
-}): Promise<Metadata> {
-  const service = await db.service.findUnique({
-    where: { slug: params.slug },
+// Generate static params for all service slugs
+export async function generateStaticParams() {
+  const allSlugs: { locale: string; slug: string }[] = []
+  
+  Object.entries(servicesData).forEach(([locale, categories]) => {
+    Object.values(categories).forEach(category => {
+      category.services.forEach(service => {
+        allSlugs.push({ locale, slug: service.slug })
+      })
+    })
   })
+  
+  return allSlugs
+}
 
-  if (!service) return {}
+export async function generateMetadata({
+  params: { locale, slug },
+}: {
+  params: { locale: string; slug: string }
+}) {
+  const service = findServiceBySlug(locale, slug)
+  
+  if (!service) {
+    return buildMetadata({
+      locale,
+      titlePt: 'Serviço não encontrado',
+      titleEn: 'Service not found',
+      descPt: 'O serviço solicitado não foi encontrado.',
+      descEn: 'The requested service was not found.',
+      path: `/${locale}/servicos/${slug}`,
+    })
+  }
 
   return buildMetadata({
-    locale: params.locale,
-    titlePt: service.metaTitlePt || `${service.titlePt} | Tec Fazer`,
-    titleEn: service.metaTitleEn || `${service.titleEn} | Tec Fazer`,
-    descPt: service.metaDescPt || service.shortDescPt,
-    descEn: service.metaDescEn || service.shortDescEn,
-    path: `/servicos/${params.slug}`,
-    image: service.featuredImage || undefined,
+    locale,
+    titlePt: `${service.title} | Tec Fazer - ${service.price}`,
+    titleEn: `${service.title} | Tec Fazer - ${service.price}`,
+    descPt: `${service.description} ${service.fullDescription || ''} Preço: ${service.price}. ISO 9001 certificado.`,
+    descEn: `${service.description} ${service.fullDescription || ''} Price: ${service.price}. ISO 9001 certified.`,
+    path: `/${locale}/servicos/${slug}`,
   })
 }
 
-export async function generateStaticParams() {
-  // Return empty array to prevent static generation at build time
-  // Pages will be generated dynamically at request time
-  return []
-}
-
-export default async function ServiceDetailPage({ 
-  params 
-}: { 
-  params: { locale: string; slug: string } 
-}) {
-  const service = await db.service.findUnique({
-    where: { slug: params.slug },
-  })
-
-  if (!service || !service.isActive) notFound()
-
-  const title = params.locale === 'pt' ? service.titlePt : service.titleEn
-  const shortDesc = params.locale === 'pt' ? service.shortDescPt : service.shortDescEn
-  const fullDesc = params.locale === 'pt' ? service.fullDescPt : service.fullDescEn
+function findServiceBySlug(locale: string, slug: string): ServiceItem | null {
+  const services = servicesData[locale as keyof typeof servicesData] || servicesData.en
   
-  // Parse process steps and FAQs from JSON
-  const processSteps = service.processSteps as any[]
-  const faqs = service.faqs as any[]
+  for (const category of Object.values(services)) {
+    const service = category.services.find(s => s.slug === slug)
+    if (service) return service
+  }
+  
+  return null
+}
 
-  // Fetch related services
-  const relatedServices = await db.service.findMany({
-    where: {
-      isActive: true,
-      category: service.category,
-      id: { not: service.id },
-    },
-    take: 3,
-  }).catch(() => [])
+function findCategoryByServiceSlug(locale: string, slug: string) {
+  const services = servicesData[locale as keyof typeof servicesData] || servicesData.en
+  
+  for (const [categoryKey, category] of Object.entries(services)) {
+    const service = category.services.find(s => s.slug === slug)
+    if (service) return { categoryKey, category }
+  }
+  
+  return null
+}
+
+export default async function ServiceDetailPage({
+  params: { locale, slug },
+}: {
+  params: { locale: string; slug: string }
+}) {
+  const service = findServiceBySlug(locale, slug)
+  const categoryInfo = findCategoryByServiceSlug(locale, slug)
+  
+  if (!service || !categoryInfo) {
+    notFound()
+  }
+
+  const { category } = categoryInfo
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Back Button */}
-      <div className="container mx-auto px-4 py-8">
-        <Link
-          href={`/${params.locale}/servicos`}
-          className="inline-flex items-center gap-2 text-brand-teal hover:text-brand-orange transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          {params.locale === 'pt' ? 'Voltar aos Serviços' : 'Back to Services'}
-        </Link>
-      </div>
-
+    <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-teal/10 to-brand-orange/10" />
-        {service.featuredImage && (
-          <div className="absolute inset-0 opacity-10">
-            <Image
-              src={service.featuredImage}
-              alt={title}
-              fill
-              className="object-cover"
-            />
-          </div>
-        )}
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-block px-4 py-2 bg-brand-teal/20 rounded-full text-brand-teal font-medium mb-6">
-              {service.category}
-            </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              {title}
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              {shortDesc}
-            </p>
-            <Link
-              href={`/${params.locale}/contacto?service=${service.slug}`}
-              className="inline-block px-8 py-4 bg-gradient-to-r from-brand-teal to-brand-orange text-white font-bold rounded-lg hover:shadow-xl transition-all transform hover:scale-105"
-            >
-              {params.locale === 'pt' ? 'Solicitar Orçamento' : 'Request Quote'}
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Full Description */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="prose prose-lg max-w-none">
-            <p className="text-lg text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {fullDesc}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Technologies */}
-      {service.technologies.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-3xl font-bold mb-8 text-center">
-              {params.locale === 'pt' ? 'Tecnologias Utilizadas' : 'Technologies Used'}
-            </h2>
-            <div className="flex flex-wrap gap-4 justify-center">
-              {service.technologies.map((tech) => (
-                <div
-                  key={tech}
-                  className="px-6 py-3 bg-white rounded-lg shadow-md font-medium text-gray-700 hover:shadow-lg transition-shadow"
+      <section className={`relative overflow-hidden bg-gradient-to-br ${category.color} py-32`}>
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+        
+        <div className="container relative z-10 mx-auto px-4">
+          <SectionReveal>
+            <div className="mx-auto max-w-4xl">
+              {/* Breadcrumb */}
+              <div className="mb-8">
+                <Link 
+                  href={`/${locale}/servicos`}
+                  className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors"
                 >
-                  {tech}
+                  <ArrowLeft className="h-4 w-4" />
+                  {locale === 'pt' ? 'Voltar aos Serviços' : 'Back to Services'}
+                </Link>
+              </div>
+
+              <div className="text-center">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+                  <category.icon className="h-4 w-4" />
+                  {category.title}
                 </div>
-              ))}
+                
+                <h1 className="mb-6 text-5xl font-bold tracking-tight text-white md:text-6xl">
+                  {service.title}
+                </h1>
+                
+                <p className="text-xl text-white/90 md:text-2xl mb-8 max-w-3xl mx-auto">
+                  {service.fullDescription || service.description}
+                </p>
+
+                <div className="flex flex-wrap justify-center gap-4 mb-8">
+                  <Badge className="bg-white/20 text-white border-white/30 text-lg px-4 py-2">
+                    {service.price}
+                  </Badge>
+                  {service.timeline && (
+                    <Badge className="bg-white/20 text-white border-white/30 text-lg px-4 py-2">
+                      <Clock className="h-4 w-4 mr-2" />
+                      {service.timeline}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Button asChild size="lg" className="bg-white text-slate-900 hover:bg-white/90 px-8 py-6 text-lg">
+                    <Link href={`/${locale}/contacto?service=${service.slug}`}>
+                      {locale === 'pt' ? 'Solicitar Orçamento' : 'Request Quote'}
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg">
+                    <Link href={`/${locale}/orcamento?service=${service.slug}`}>
+                      {locale === 'pt' ? 'Calcular Preço' : 'Calculate Price'}
+                      <Euro className="ml-2 h-5 w-5" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </SectionReveal>
+        </div>
+      </section>
 
-      {/* Process Steps */}
-      {processSteps && processSteps.length > 0 && (
-        <section className="py-16">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-3xl font-bold mb-12 text-center">
-              {params.locale === 'pt' ? 'Nosso Processo' : 'Our Process'}
-            </h2>
+      {/* Service Details */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid gap-12 lg:grid-cols-2">
+            {/* Features & Benefits */}
             <div className="space-y-8">
-              {processSteps.map((step: any, index: number) => {
-                const stepTitle = params.locale === 'pt' ? step.titlePt : step.titleEn
-                const stepDesc = params.locale === 'pt' ? step.descriptionPt : step.descriptionEn
-
-                return (
-                  <div key={index} className="flex gap-6">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-brand-teal to-brand-orange text-white flex items-center justify-center text-xl font-bold">
-                        {index + 1}
+              <SectionReveal>
+                <div>
+                  <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                    <CheckCircle2 className="h-8 w-8 text-green-500" />
+                    {locale === 'pt' ? 'Funcionalidades Incluídas' : 'Included Features'}
+                  </h2>
+                  <div className="grid gap-4">
+                    {service.features.map((feature, index) => (
+                      <div key={index} className="flex items-center gap-3 p-4 rounded-lg bg-slate-50">
+                        <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                        <span className="font-medium">{feature}</span>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2">{stepTitle}</h3>
-                      <p className="text-gray-600 leading-relaxed">{stepDesc}</p>
+                    ))}
+                  </div>
+                </div>
+              </SectionReveal>
+
+              {service.benefits && (
+                <SectionReveal delay={0.1}>
+                  <div>
+                    <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                      <Target className="h-8 w-8 text-brand-teal" />
+                      {locale === 'pt' ? 'Benefícios para o Seu Negócio' : 'Benefits for Your Business'}
+                    </h2>
+                    <div className="grid gap-4">
+                      {service.benefits.map((benefit, index) => (
+                        <div key={index} className="flex items-center gap-3 p-4 rounded-lg bg-brand-teal/5 border border-brand-teal/20">
+                          <Star className="h-5 w-5 text-brand-teal flex-shrink-0" />
+                          <span className="font-medium">{benefit}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                )
-              })}
+                </SectionReveal>
+              )}
             </div>
-          </div>
-        </section>
-      )}
 
-      {/* FAQs */}
-      {faqs && faqs.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-3xl font-bold mb-12 text-center">
-              {params.locale === 'pt' ? 'Perguntas Frequentes' : 'Frequently Asked Questions'}
-            </h2>
-            <div className="space-y-4">
-              {faqs.map((faq: any, index: number) => {
-                const question = params.locale === 'pt' ? faq.questionPt : faq.questionEn
-                const answer = params.locale === 'pt' ? faq.answerPt : faq.answerEn
+            {/* Technologies & Process */}
+            <div className="space-y-8">
+              <SectionReveal>
+                <div>
+                  <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                    <Cog className="h-8 w-8 text-brand-orange" />
+                    {locale === 'pt' ? 'Tecnologias Utilizadas' : 'Technologies Used'}
+                  </h2>
+                  <div className="flex flex-wrap gap-3">
+                    {service.technologies.map((tech, index) => (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="text-sm px-4 py-2 bg-slate-50 hover:bg-slate-100 transition-colors"
+                      >
+                        {tech}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </SectionReveal>
 
-                return (
-                  <details
-                    key={index}
-                    className="group bg-white rounded-lg shadow-md overflow-hidden"
-                  >
-                    <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50 transition-colors">
-                      <span className="font-bold text-lg">{question}</span>
-                      <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
-                    </summary>
-                    <div className="px-6 pb-6 text-gray-600 leading-relaxed">
-                      {answer}
+              {service.process && (
+                <SectionReveal delay={0.1}>
+                  <div>
+                    <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                      <Lightbulb className="h-8 w-8 text-yellow-500" />
+                      {locale === 'pt' ? 'Processo de Desenvolvimento' : 'Development Process'}
+                    </h2>
+                    <div className="space-y-4">
+                      {service.process.map((step, index) => (
+                        <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <span className="font-medium">{step}</span>
+                        </div>
+                      ))}
                     </div>
-                  </details>
-                )
-              })}
+                  </div>
+                </SectionReveal>
+              )}
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
-      {/* Related Services */}
-      {relatedServices.length > 0 && (
-        <section className="py-16">
+      {/* Deliverables & Support */}
+      {(service.deliverables || service.support) && (
+        <section className="py-24 bg-slate-50">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-8 text-center">
-              {params.locale === 'pt' ? 'Serviços Relacionados' : 'Related Services'}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {relatedServices.map((relatedService) => {
-                const relatedTitle = params.locale === 'pt' ? relatedService.titlePt : relatedService.titleEn
-                const relatedDesc = params.locale === 'pt' ? relatedService.shortDescPt : relatedService.shortDescEn
+            <div className="grid gap-12 lg:grid-cols-2">
+              {service.deliverables && (
+                <SectionReveal>
+                  <div>
+                    <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                      <Truck className="h-8 w-8 text-blue-500" />
+                      {locale === 'pt' ? 'O Que Vai Receber' : 'What You Will Receive'}
+                    </h2>
+                    <div className="space-y-4">
+                      {service.deliverables.map((deliverable, index) => (
+                        <div key={index} className="flex items-center gap-3 p-4 rounded-lg bg-white shadow-sm">
+                          <FileText className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                          <span className="font-medium">{deliverable}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </SectionReveal>
+              )}
 
-                return (
-                  <Link
-                    key={relatedService.id}
-                    href={`/${params.locale}/servicos/${relatedService.slug}`}
-                    className="group"
-                  >
-                    <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                      <div className="text-4xl mb-4">{relatedService.icon}</div>
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-brand-teal transition-colors">
-                        {relatedTitle}
-                      </h3>
-                      <p className="text-gray-600 line-clamp-3">
-                        {relatedDesc}
+              {service.support && (
+                <SectionReveal delay={0.1}>
+                  <div>
+                    <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                      <HeadphonesIcon className="h-8 w-8 text-purple-500" />
+                      {locale === 'pt' ? 'Suporte Incluído' : 'Support Included'}
+                    </h2>
+                    <div className="p-6 rounded-lg bg-white shadow-sm">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Shield className="h-6 w-6 text-purple-500" />
+                        <span className="font-bold text-lg">{service.support}</span>
+                      </div>
+                      <p className="text-muted-foreground">
+                        {locale === 'pt' 
+                          ? 'Suporte técnico completo incluído no preço, garantindo o sucesso do seu projeto.'
+                          : 'Complete technical support included in the price, ensuring the success of your project.'}
                       </p>
                     </div>
-                  </Link>
-                )
-              })}
+                  </div>
+                </SectionReveal>
+              )}
             </div>
           </div>
         </section>
       )}
 
-      {/* CTA */}
-      <section className="py-20 bg-gradient-to-r from-brand-teal to-brand-orange">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            {params.locale === 'pt' 
-              ? 'Interessado neste serviço?' 
-              : 'Interested in this service?'}
-          </h2>
-          <p className="text-xl text-white/90 mb-8">
-            {params.locale === 'pt'
-              ? 'Entre em contacto connosco para discutir o seu projeto'
-              : 'Get in touch with us to discuss your project'}
-          </p>
-          <Link
-            href={`/${params.locale}/contacto?service=${service.slug}`}
-            className="inline-block px-8 py-4 bg-white text-brand-teal font-bold rounded-lg hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            {params.locale === 'pt' ? 'Fale Connosco' : 'Contact Us'}
-          </Link>
+      {/* CTA Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 py-24 text-white">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
+        <div className="container relative z-10 mx-auto px-4">
+          <SectionReveal>
+            <div className="mx-auto max-w-4xl text-center">
+              <h2 className="mb-6 text-4xl font-bold md:text-5xl">
+                {locale === 'pt'
+                  ? 'Pronto para Começar?'
+                  : 'Ready to Get Started?'}
+              </h2>
+              <p className="mb-8 text-xl text-white/80">
+                {locale === 'pt'
+                  ? 'Vamos discutir como este serviço pode transformar o seu negócio'
+                  : "Let's discuss how this service can transform your business"}
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                <Button asChild size="lg" className="bg-gradient-to-r from-brand-teal to-brand-orange hover:opacity-90 text-white px-8 py-6 text-lg">
+                  <Link href={`/${locale}/contacto?service=${service.slug}`}>
+                    <Phone className="mr-2 h-5 w-5" />
+                    {locale === 'pt' ? 'Falar Connosco' : 'Contact Us'}
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg">
+                  <Link href={`mailto:info@tecfazer.pt?subject=${encodeURIComponent(`${locale === 'pt' ? 'Interesse em' : 'Interest in'} ${service.title}`)}`}>
+                    <Mail className="mr-2 h-5 w-5" />
+                    {locale === 'pt' ? 'Enviar Email' : 'Send Email'}
+                  </Link>
+                </Button>
+              </div>
+              <div className="flex flex-wrap justify-center gap-6 text-sm text-white/60">
+                <span>✓ {locale === 'pt' ? 'Consulta gratuita 30min' : 'Free 30min consultation'}</span>
+                <span>✓ {locale === 'pt' ? 'Resposta em 24h' : 'Response within 24h'}</span>
+                <span>✓ {locale === 'pt' ? 'Orçamento personalizado' : 'Custom quote'}</span>
+              </div>
+            </div>
+          </SectionReveal>
         </div>
       </section>
     </div>
