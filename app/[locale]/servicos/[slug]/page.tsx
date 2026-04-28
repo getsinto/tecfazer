@@ -1,14 +1,12 @@
-import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import SectionReveal from '@/components/ui/SectionReveal'
 import { 
-  ArrowRight, CheckCircle2, Clock, Euro, Star, Award, Shield, 
-  Zap, Users, FileText, Calendar, Phone, Mail, ArrowLeft,
-  Target, Lightbulb, Cog, Truck, HeadphonesIcon
+  ArrowRight, CheckCircle2, Clock, Euro, Star, Shield, 
+  Target, Lightbulb, Cog, Truck, HeadphonesIcon, ArrowLeft,
+  Phone, Mail, FileText
 } from 'lucide-react'
 import { buildMetadata } from '@/lib/seo'
 import { servicesData, type ServiceItem } from '@/lib/services-data'

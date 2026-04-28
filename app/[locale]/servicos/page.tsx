@@ -1,11 +1,10 @@
-import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import SectionReveal from '@/components/ui/SectionReveal'
 import { 
-  ArrowRight, Sparkles, Zap, CheckCircle2, Award, Clock, Euro, Eye
+  ArrowRight, Sparkles, CheckCircle2, Award, Clock, Euro, Users
 } from 'lucide-react'
 import { buildMetadata } from '@/lib/seo'
 import { servicesData } from '@/lib/services-data'
@@ -424,7 +423,6 @@ export default async function ServicesPage({
 }: {
   params: { locale: string }
 }) {
-  const t = await getTranslations('services')
   const services = servicesData[locale as keyof typeof servicesData] || servicesData.en
 
   return (

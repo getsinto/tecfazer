@@ -1,8 +1,5 @@
 import { 
-  Code, Smartphone, Cloud, Palette, TrendingUp, Brain, Shield, 
-  Wrench, Headphones, ShoppingCart, Database, Server, Monitor, 
-  Tablet, Search, BarChart3, Mail, Share2, Settings, Users, 
-  FileText, Briefcase, Globe, Zap, CheckCircle2
+  Code, Smartphone, ShoppingCart, Briefcase
 } from 'lucide-react'
 
 export interface ServiceItem {
