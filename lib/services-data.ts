@@ -1,6 +1,7 @@
 import { 
-  Code, Smartphone, ShoppingCart, Briefcase
+  Code, Smartphone, ShoppingCart
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 export interface ServiceItem {
   title: string
@@ -20,7 +21,7 @@ export interface ServiceItem {
 export interface ServiceCategory {
   title: string
   description: string
-  icon: any
+  icon: LucideIcon
   color: string
   services: ServiceItem[]
 }
