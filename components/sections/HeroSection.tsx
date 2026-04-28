@@ -61,7 +61,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-12 sm:mb-16"
           >
             <Button
               asChild
@@ -77,7 +77,7 @@ export default function HeroSection() {
               asChild
               size="lg"
               variant="outline"
-              className="border-2 border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6 rounded-full backdrop-blur-sm"
+              className="border-2 border-white/40 text-white hover:bg-white/20 hover:border-white/60 text-lg px-8 py-6 rounded-full backdrop-blur-sm transition-all"
             >
               <Link href="/pt/portfolio">
                 {t('secondaryCta')}
@@ -90,7 +90,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-wrap gap-3 justify-center"
+            className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-8 sm:mb-0"
           >
             {techStack.map((tech, index) => (
               <motion.span
@@ -111,11 +111,11 @@ export default function HeroSection() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.8 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2"
+          className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2"
         >
-          <div className="flex flex-col items-center gap-2 text-white/60">
-            <span className="text-sm">{t('scrollHint')}</span>
-            <ChevronDown className="h-6 w-6 animate-bounce" />
+          <div className="flex flex-col items-center gap-2 text-white/70 hover:text-white/90 transition-colors cursor-pointer">
+            <span className="text-sm font-medium">{t('scrollHint')}</span>
+            <ChevronDown className="h-5 w-5 sm:h-6 sm:w-6 animate-bounce" />
           </div>
         </motion.div>
       </div>
