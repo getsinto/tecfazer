@@ -1,4 +1,5 @@
 ﻿import Link from 'next/link'
+import Image from 'next/image'
 import {
   Code, Smartphone, ShoppingCart, Cloud, Palette, TrendingUp, Brain,
   Shield, Headphones, Briefcase, ArrowRight, ArrowUpRight, CheckCircle2,
@@ -148,6 +149,50 @@ const CATEGORY_CONFIG: Record<string, {
   },
 }
 
+// High-quality Unsplash images for each category
+const CATEGORY_IMAGES: Record<string, { src: string; alt: string }> = {
+  development: {
+    src: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Web development code on screen',
+  },
+  mobile: {
+    src: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Mobile app development on smartphone',
+  },
+  ecommerce: {
+    src: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80&auto=format&fit=crop',
+    alt: 'E-commerce online shopping',
+  },
+  cloud: {
+    src: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Cloud computing infrastructure',
+  },
+  design: {
+    src: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Graphic design and visual identity',
+  },
+  marketing: {
+    src: 'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Digital marketing analytics',
+  },
+  ai: {
+    src: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Artificial intelligence and machine learning',
+  },
+  security: {
+    src: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Cybersecurity and data protection',
+  },
+  consulting: {
+    src: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Technology consulting and strategy',
+  },
+  support: {
+    src: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Technical support and maintenance',
+  },
+}
+
 export default async function ServicesPage({ params: { locale } }: { params: { locale: string } }) {
   const services = servicesData[locale as keyof typeof servicesData] || servicesData.en
   const categories = Object.entries(services)
@@ -250,29 +295,45 @@ export default async function ServicesPage({ params: { locale } }: { params: { l
           return (
             <section key={key} id={key} className="py-20 scroll-mt-32">
               <SectionReveal>
-                {/* ── Category Header ── */}
+                {/* ── Category Header with Image ── */}
                 <div className="mb-10">
-                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-4">
-                      {/* large icon */}
-                      <div className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${cfg.gradient} shadow-xl`}>
-                        <Icon className="h-8 w-8 text-white" />
-                      </div>
-                      <div>
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${cfg.badge}`}>
+                  {/* Image banner */}
+                  <div className="relative mb-8 h-56 w-full overflow-hidden rounded-2xl sm:h-64 lg:h-72">
+                    <Image
+                      src={CATEGORY_IMAGES[key]?.src || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&q=80&auto=format&fit=crop'}
+                      alt={CATEGORY_IMAGES[key]?.alt || category.title}
+                      fill
+                      className="object-cover transition-transform duration-700 hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 1200px"
+                      unoptimized
+                    />
+                    {/* gradient overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-r ${cfg.gradient} opacity-70`} />
+                    {/* dark bottom fade */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    {/* content over image */}
+                    <div className="absolute inset-0 flex items-end p-6 sm:p-8">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm shadow-xl border border-white/30">
+                          <Icon className="h-7 w-7 text-white" />
+                        </div>
+                        <div>
+                          <span className="mb-1 inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
                             {category.services.length} {isPt ? 'servicos' : 'services'}
                           </span>
+                          <h2 className="text-2xl font-black text-white drop-shadow-lg sm:text-3xl">{category.title}</h2>
+                          <p className="mt-0.5 text-sm text-white/80">{category.description}</p>
                         </div>
-                        <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">{category.title}</h2>
-                        <p className="mt-0.5 text-sm text-slate-500">{category.description}</p>
                       </div>
                     </div>
-                    <Link href={`/${locale}/contacto?category=${key}`}
-                      className="flex-shrink-0 inline-flex items-center gap-2 rounded-full border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-slate-900 hover:bg-slate-900 hover:text-white hover:shadow-lg">
-                      {isPt ? 'Pedir Proposta' : 'Request Proposal'}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
+                    {/* request proposal button top-right */}
+                    <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+                      <Link href={`/${locale}/contacto?category=${key}`}
+                        className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/30 backdrop-blur-sm px-4 py-2 text-xs font-bold text-white transition-all hover:bg-white hover:text-slate-900">
+                        {isPt ? 'Pedir Proposta' : 'Request Proposal'}
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </SectionReveal>
