@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -19,7 +18,6 @@ type LoginFormData = z.infer<typeof loginSchema>
 export default function PortalLoginPage({ params }: { params: { locale: string } }) {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const router = useRouter()
   const isPt = params.locale === 'pt'
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
@@ -38,14 +36,15 @@ export default function PortalLoginPage({ params }: { params: { locale: string }
       if (result?.error) {
         toast.error(isPt ? 'Email ou password incorretos' : 'Incorrect email or password')
       } else if (result?.ok) {
-        // Hard navigate to avoid RSC redirect loop
         window.location.href = `/${params.locale}/portal/dashboard`
       } else {
         toast.error(isPt ? 'Erro ao fazer login. Tente novamente.' : 'Error logging in. Please try again.')
       }
     } catch {
       toast.error(isPt ? 'Erro ao fazer login. Tente novamente.' : 'Error logging in. Please try again.')
-    } finally { setIsLoading(false) }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const features = [
@@ -56,7 +55,7 @@ export default function PortalLoginPage({ params }: { params: { locale: string }
   ]
 
   return (
-    <div className="min-h-screen bg-[#060d1f] flex">
+    <div className="fixed inset-0 z-50 flex bg-[#060d1f]">
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0"
@@ -166,7 +165,7 @@ export default function PortalLoginPage({ params }: { params: { locale: string }
 
           <div className="text-center mt-5">
             <Link href={`/${params.locale}`} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">
-              ← {isPt ? 'Voltar ao site' : 'Back to website'}
+              {isPt ? 'Voltar ao site' : 'Back to website'}
             </Link>
           </div>
         </div>
