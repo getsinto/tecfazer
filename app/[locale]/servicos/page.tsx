@@ -8,6 +8,7 @@ import {
 import { buildMetadata } from '@/lib/seo'
 import { servicesData } from '@/lib/services-data'
 import SectionReveal from '@/components/ui/SectionReveal'
+import BuyServiceButton from '@/components/services/BuyServiceButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -404,13 +405,21 @@ export default async function ServicesPage({ params: { locale } }: { params: { l
                         )}
 
                         {/* footer cta */}
-                        <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                          <span className={`text-xs font-bold ${cfg.text}`}>
-                            {isPt ? 'Ver detalhes' : 'View details'}
-                          </span>
-                          <div className={`flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all duration-200 group-hover:bg-gradient-to-br group-hover:${cfg.gradient} group-hover:text-white group-hover:shadow-md`}>
+                        <div className="flex items-center gap-2 border-t border-slate-100 pt-4">
+                          <BuyServiceButton
+                            serviceSlug={service.slug}
+                            serviceTitle={service.title}
+                            serviceDescription={service.description}
+                            priceText={service.price}
+                            locale={locale}
+                            variant="primary"
+                            size="sm"
+                            className="flex-1"
+                          />
+                          <Link href={`/${locale}/servicos/${service.slug}`}
+                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition-all hover:border-slate-900 hover:bg-slate-900 hover:text-white">
                             <ArrowUpRight className="h-4 w-4" />
-                          </div>
+                          </Link>
                         </div>
                       </div>
                     </Link>

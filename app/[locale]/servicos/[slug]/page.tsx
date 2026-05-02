@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock, ArrowUpRight, Mail, Phone } from 'lucide-react'
 import { buildMetadata } from '@/lib/seo'
 import { servicesData, type ServiceItem } from '@/lib/services-data'
+import BuyServiceButton from '@/components/services/BuyServiceButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -126,13 +127,22 @@ export default async function ServiceDetailPage({ params: { locale, slug } }: { 
                   </div>
                 )}
 
+                <BuyServiceButton
+                  serviceSlug={service.slug}
+                  serviceTitle={service.title}
+                  serviceDescription={service.description}
+                  priceText={service.price}
+                  locale={locale}
+                  variant="white"
+                  size="lg"
+                  className="mb-3 w-full"
+                />
                 <Link href={`/${locale}/contacto?service=${service.slug}`}
-                  className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1B7A8A] to-[#F5A623] py-3.5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90">
+                  className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10">
                   {isPt ? 'Solicitar Orçamento' : 'Request Quote'}
-                  <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link href={`/${locale}/orcamento?service=${service.slug}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-3.5 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10">
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-white/60 transition-colors hover:bg-white/10">
                   {isPt ? 'Calcular Preço' : 'Calculate Price'}
                 </Link>
 
