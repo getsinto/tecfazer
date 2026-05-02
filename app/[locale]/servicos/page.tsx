@@ -343,8 +343,8 @@ export default async function ServicesPage({ params: { locale } }: { params: { l
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {category.services.map((service, sIdx) => (
                   <SectionReveal key={service.slug} delay={sIdx * 0.04}>
-                    <Link href={`/${locale}/servicos/${service.slug}`}
-                      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-slate-300 hover:shadow-2xl">
+                    {/* Card is a div — NOT a Link — so Buy button works without navigation */}
+                    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-2xl">
 
                       {/* gradient top bar */}
                       <div className={`h-1 w-full bg-gradient-to-r ${cfg.gradient}`} />
@@ -361,10 +361,12 @@ export default async function ServicesPage({ params: { locale } }: { params: { l
                           </span>
                         </div>
 
-                        {/* title */}
-                        <h3 className="mb-2 text-[17px] font-bold leading-snug text-slate-900 transition-colors group-hover:text-[#1B7A8A]">
-                          {service.title}
-                        </h3>
+                        {/* title — clickable to detail */}
+                        <Link href={`/${locale}/servicos/${service.slug}`}>
+                          <h3 className="mb-2 text-[17px] font-bold leading-snug text-slate-900 transition-colors hover:text-[#1B7A8A] cursor-pointer">
+                            {service.title}
+                          </h3>
+                        </Link>
 
                         {/* description */}
                         <p className="mb-5 flex-1 text-sm leading-relaxed text-slate-500">
@@ -422,7 +424,7 @@ export default async function ServicesPage({ params: { locale } }: { params: { l
                           </Link>
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   </SectionReveal>
                 ))}
               </div>
