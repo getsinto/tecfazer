@@ -339,7 +339,7 @@ export default async function ServiceDetailPage({ params: { locale, slug } }: { 
       )}
 
       {/* ── PURCHASE CTA BANNER ──────────────────────────────── */}
-      <section className="py-16 sm:py-20 bg-slate-50">
+      <section id="comprar" className="py-16 sm:py-20 bg-slate-50 scroll-mt-20">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="relative overflow-hidden rounded-3xl bg-[#0a0f1e] px-6 py-12 sm:px-12 sm:py-16">
             <div className="pointer-events-none absolute -top-32 -left-32 h-64 w-64 rounded-full bg-[#1B7A8A]/30 blur-[80px]" />
