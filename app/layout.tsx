@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
+import SessionProvider from '@/components/providers/SessionProvider'
 import './globals.css'
 
 const inter = Inter({ 
@@ -42,7 +43,9 @@ export default function RootLayout({
         )}
       </head>
       <body className={inter.className}>
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   )
