@@ -182,7 +182,8 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey) {
-      // No email service configured — return success anyway so UI doesn't break
+      // No email service configured — return success so UI doesn't show error
+      console.log('RESEND_API_KEY not set — skipping email send, returning success')
       return NextResponse.json({ success: true, fallback: true })
     }
 
