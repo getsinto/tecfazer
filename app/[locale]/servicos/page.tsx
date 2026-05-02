@@ -8,6 +8,7 @@ import {
 import { buildMetadata } from '@/lib/seo'
 import { servicesData } from '@/lib/services-data'
 import SectionReveal from '@/components/ui/SectionReveal'
+import BuyServiceButton from '@/components/services/BuyServiceButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -405,17 +406,23 @@ export default async function ServicesPage({ params: { locale } }: { params: { l
                           </div>
                         )}
 
-                        {/* footer cta — only links to detail, no buy modal here */}
+                        {/* footer cta — View Details + Buy Now */}
                         <div className="flex items-center gap-2 border-t border-slate-100 pt-4">
                           <Link href={`/${locale}/servicos/${service.slug}`}
-                            className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition-all bg-gradient-to-r ${cfg.gradient} text-white shadow-md hover:shadow-lg hover:scale-[1.02]`}>
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 py-2.5 text-sm font-bold text-slate-700 transition-all hover:border-slate-900 hover:bg-slate-900 hover:text-white">
                             {isPt ? 'Ver Detalhes' : 'View Details'}
-                            <ArrowRight className="h-4 w-4" />
+                            <ArrowUpRight className="h-3.5 w-3.5" />
                           </Link>
-                          <Link href={`/${locale}/servicos/${service.slug}`}
-                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition-all hover:border-slate-900 hover:bg-slate-900 hover:text-white">
-                            <ArrowUpRight className="h-4 w-4" />
-                          </Link>
+                          <BuyServiceButton
+                            serviceSlug={service.slug}
+                            serviceTitle={service.title}
+                            serviceDescription={service.description}
+                            priceText={service.price}
+                            locale={locale}
+                            variant="primary"
+                            size="sm"
+                            className="flex-1"
+                          />
                         </div>
                       </div>
                     </div>
