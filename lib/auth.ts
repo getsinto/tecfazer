@@ -96,15 +96,23 @@ const authConfig: NextAuthConfig = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id
-        session.user.role = token.role
+        session.user.id = token.id as string
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        session.user.role = token.role as any
       }
       return session
     },
+    async redirect({ url, baseUrl }) {
+      // Allow relative URLs
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      // Allow same origin
+      if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
   },
   pages: {
-    signIn: '/admin/login',
-    error: '/admin/login',
+    signIn: '/pt/portal/login',
+    error: '/pt/portal/login',
   },
   session: {
     strategy: 'jwt',

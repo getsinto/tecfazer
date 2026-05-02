@@ -29,11 +29,19 @@ export default function PortalLoginPage({ params }: { params: { locale: string }
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
     try {
-      const result = await signIn('portal', { email: data.email, password: data.password, redirect: false })
+      const result = await signIn('portal', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+        callbackUrl: `/${params.locale}/portal/dashboard`,
+      })
       if (result?.error) {
         toast.error(isPt ? 'Email ou password incorretos' : 'Incorrect email or password')
+      } else if (result?.ok) {
+        // Hard navigate to avoid RSC redirect loop
+        window.location.href = `/${params.locale}/portal/dashboard`
       } else {
-        router.push(`/${params.locale}/portal/dashboard`)
+        toast.error(isPt ? 'Erro ao fazer login. Tente novamente.' : 'Error logging in. Please try again.')
       }
     } catch {
       toast.error(isPt ? 'Erro ao fazer login. Tente novamente.' : 'Error logging in. Please try again.')

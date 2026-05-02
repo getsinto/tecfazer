@@ -38,10 +38,11 @@ export async function middleware(request: NextRequest) {
 
   // Portal routes protection (excluding login)
   if (pathname.includes('/portal') && !pathname.includes('/portal/login')) {
-    const portalToken = request.cookies.get('portal-session')
+    // Check NextAuth JWT cookie (works for both secure and non-secure)
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     
-    if (!portalToken) {
-      const locale = pathname.split('/')[1]
+    if (!token) {
+      const locale = pathname.split('/')[1] || 'pt'
       return NextResponse.redirect(new URL(`/${locale}/portal/login`, request.url))
     }
   }
