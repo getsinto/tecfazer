@@ -1,182 +1,132 @@
 import { auth } from '@/lib/auth'
 import db from '@/lib/db'
-import { CreditCard, Download, ExternalLink } from 'lucide-react'
+import { CreditCard, Download, CheckCircle2, Clock, XCircle, ArrowRight, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
 
 export default async function PortalBillingPage({ params }: { params: { locale: string } }) {
   const session = await auth()
   const isPt = params.locale === 'pt'
-
   if (!session?.user?.email) return null
 
-  // Fetch orders
   const orders = await db.order.findMany({
     where: { customerEmail: session.user.email },
-    include: { plan: true },
     orderBy: { createdAt: 'desc' },
   }).catch(() => [])
 
-  const activeOrder = orders.find((o) => o.status === 'PAID')
+  const totalSpent = orders.filter(o => o.status === 'PAID').reduce((sum, o) => sum + Number(o.amount), 0)
+  const activeCount = orders.filter(o => o.status === 'PAID').length
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PAID':
-        return 'bg-green-100 text-green-700'
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-700'
-      case 'CANCELLED':
-        return 'bg-gray-100 text-gray-700'
-      case 'REFUNDED':
-        return 'bg-red-100 text-red-700'
-      default:
-        return 'bg-gray-100 text-gray-700'
-    }
-  }
-
-  const translateStatus = (status: string) => {
-    if (!isPt) return status
-    switch (status) {
-      case 'PAID': return 'Pago'
-      case 'PENDING': return 'Pendente'
-      case 'CANCELLED': return 'Cancelado'
-      case 'REFUNDED': return 'Reembolsado'
-      default: return status
-    }
+  const statusConfig: Record<string, { label: string; labelPt: string; bg: string; text: string; icon: typeof CheckCircle2 }> = {
+    PAID:      { label: 'Paid',      labelPt: 'Pago',        bg: 'bg-emerald-100', text: 'text-emerald-700', icon: CheckCircle2 },
+    PENDING:   { label: 'Pending',   labelPt: 'Pendente',    bg: 'bg-amber-100',   text: 'text-amber-700',   icon: Clock },
+    CANCELLED: { label: 'Cancelled', labelPt: 'Cancelado',   bg: 'bg-slate-100',   text: 'text-slate-500',   icon: XCircle },
+    REFUNDED:  { label: 'Refunded',  labelPt: 'Reembolsado', bg: 'bg-red-100',     text: 'text-red-700',     icon: XCircle },
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-5xl">
       <div>
-        <h1 className="text-3xl font-bold mb-2">
-          {isPt ? 'Faturação' : 'Billing'}
-        </h1>
-        <p className="text-gray-600">
-          {isPt ? 'Gerencie a sua subscrição e histórico de pagamentos' : 'Manage your subscription and payment history'}
-        </p>
+        <h1 className="text-3xl font-black text-slate-900">{isPt ? 'Faturacao' : 'Billing'}</h1>
+        <p className="text-slate-500 mt-1">{isPt ? 'Historico de pagamentos e faturas.' : 'Payment history and invoices.'}</p>
       </div>
 
-      {/* Active Subscription */}
-      {activeOrder ? (
-        <div className="bg-gradient-to-r from-brand-teal to-brand-orange rounded-xl p-8 text-white">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">
-                {isPt ? 'Subscrição Ativa' : 'Active Subscription'}
-              </h2>
-              <p className="text-white/90 text-lg">
-                {isPt ? activeOrder.plan.namePt : activeOrder.plan.nameEn}
-              </p>
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {[
+          { label: isPt ? 'Total Gasto' : 'Total Spent', value: `${totalSpent.toFixed(0)} EUR`, icon: CreditCard, color: 'from-[#1B7A8A] to-cyan-500' },
+          { label: isPt ? 'Servicos Ativos' : 'Active Services', value: String(activeCount), icon: CheckCircle2, color: 'from-emerald-500 to-teal-500' },
+          { label: isPt ? 'Total de Pedidos' : 'Total Orders', value: String(orders.length), icon: Clock, color: 'from-violet-500 to-purple-600' },
+        ].map(s => (
+          <div key={s.label} className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5">
+            <div className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${s.color} shadow-md`}>
+              <s.icon className="h-5 w-5 text-white" />
             </div>
-            <CreditCard className="w-12 h-12 text-white/80" />
+            <p className="text-2xl font-black text-slate-900">{s.value}</p>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">{s.label}</p>
           </div>
+        ))}
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div>
-              <p className="text-sm text-white/80 mb-1">{isPt ? 'Valor' : 'Amount'}</p>
-              <p className="text-3xl font-bold">
-                €{Number(activeOrder.amount).toFixed(2)}
-              </p>
-              <p className="text-sm text-white/80">
-                /{activeOrder.billingCycle === 'MONTHLY' ? (isPt ? 'mês' : 'month') : (isPt ? 'ano' : 'year')}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-white/80 mb-1">{isPt ? 'Próximo Pagamento' : 'Next Payment'}</p>
-              <p className="text-xl font-bold">
-                {new Date(new Date(activeOrder.paidAt!).setMonth(new Date(activeOrder.paidAt!).getMonth() + (activeOrder.billingCycle === 'MONTHLY' ? 1 : 12))).toLocaleDateString(isPt ? 'pt-PT' : 'en-US')}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-white/80 mb-1">{isPt ? 'Estado' : 'Status'}</p>
-              <p className="text-xl font-bold">{isPt ? 'Ativa' : 'Active'}</p>
-            </div>
+      {/* Orders table */}
+      {orders.length > 0 ? (
+        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h2 className="font-bold text-slate-900">{isPt ? 'Historico de Pagamentos' : 'Payment History'}</h2>
           </div>
-
-          <div className="flex gap-4">
-            <button className="px-6 py-3 bg-white text-brand-teal font-bold rounded-lg hover:shadow-xl transition-all flex items-center gap-2">
-              <ExternalLink className="w-5 h-5" />
-              {isPt ? 'Gerir Subscrição' : 'Manage Subscription'}
-            </button>
-            <button className="px-6 py-3 bg-white/20 text-white font-bold rounded-lg hover:bg-white/30 transition-all">
-              {isPt ? 'Cancelar' : 'Cancel'}
-            </button>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">{isPt ? 'Data' : 'Date'}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">{isPt ? 'Servico' : 'Service'}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">{isPt ? 'Valor' : 'Amount'}</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide">{isPt ? 'Estado' : 'Status'}</th>
+                  <th className="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wide">{isPt ? 'Acoes' : 'Actions'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {orders.map(order => {
+                  const cfg = statusConfig[order.status] || statusConfig.PENDING
+                  const StatusIcon = cfg.icon
+                  const serviceTitle = (order as any).serviceTitle || (order as any).plan?.namePt || 'Service'
+                  return (
+                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
+                        {new Date(order.createdAt).toLocaleDateString(isPt ? 'pt-PT' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-slate-900">{serviceTitle}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">#{order.id.slice(-8).toUpperCase()}</p>
+                      </td>
+                      <td className="px-6 py-4 font-black text-slate-900 whitespace-nowrap">
+                        {Number(order.amount).toFixed(0)} EUR
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${cfg.bg} ${cfg.text}`}>
+                          <StatusIcon className="h-3 w-3" />
+                          {isPt ? cfg.labelPt : cfg.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:border-slate-900 hover:bg-slate-900 hover:text-white transition-all">
+                          <Download className="h-3.5 w-3.5" />
+                          {isPt ? 'Fatura' : 'Invoice'}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-bold mb-2">{isPt ? 'Nenhuma subscrição ativa' : 'No active subscription'}</h3>
-          <p className="text-gray-600 mb-6">
-            {isPt ? 'Escolha um plano para começar' : 'Choose a plan to get started'}
-          </p>
-          <a
-            href={`/${params.locale}/precos`}
-            className="inline-block px-8 py-3 bg-gradient-to-r from-brand-teal to-brand-orange text-white font-bold rounded-lg hover:shadow-xl transition-all"
-          >
-            {isPt ? 'Ver Planos' : 'View Plans'}
-          </a>
+        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-16 text-center">
+          <CreditCard className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+          <h3 className="font-black text-slate-900 mb-2">{isPt ? 'Nenhum pagamento ainda' : 'No payments yet'}</h3>
+          <p className="text-slate-500 text-sm mb-5">{isPt ? 'Compre um servico para ver o historico aqui.' : 'Purchase a service to see history here.'}</p>
+          <Link href={`/${params.locale}/servicos`}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#1B7A8A] to-[#F5A623] px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:shadow-xl transition-all">
+            {isPt ? 'Ver Servicos' : 'View Services'}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       )}
 
-      {/* Order History */}
-      {orders.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-6 border-b">
-            <h2 className="text-2xl font-bold">{isPt ? 'Histórico de Pagamentos' : 'Payment History'}</h2>
-          </div>
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                  {isPt ? 'Data' : 'Date'}
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                  {isPt ? 'Plano' : 'Plan'}
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                  {isPt ? 'Valor' : 'Amount'}
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                  {isPt ? 'Estado' : 'Status'}
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                  {isPt ? 'Ações' : 'Actions'}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-700">
-                    {new Date(order.createdAt).toLocaleDateString(isPt ? 'pt-PT' : 'en-US')}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium">{isPt ? order.plan.namePt : order.plan.nameEn}</p>
-                      <p className="text-sm text-gray-600">
-                        {order.billingCycle === 'MONTHLY' ? (isPt ? 'Mensal' : 'Monthly') : (isPt ? 'Anual' : 'Annual')}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-medium">
-                    €{Number(order.amount).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                      {translateStatus(order.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="inline-flex items-center gap-2 text-brand-teal hover:text-brand-orange transition-colors font-medium">
-                      <Download className="w-4 h-4" />
-                      {isPt ? 'Fatura' : 'Invoice'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Manage subscription */}
+      <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h3 className="font-bold text-slate-900">{isPt ? 'Gerir Subscricao' : 'Manage Subscription'}</h3>
+          <p className="text-sm text-slate-500 mt-0.5">{isPt ? 'Aceda ao portal de faturacao Stripe para gerir metodos de pagamento.' : 'Access the Stripe billing portal to manage payment methods.'}</p>
         </div>
-      )}
+        <Link href="/api/stripe/portal"
+          className="inline-flex items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:border-slate-900 hover:bg-slate-900 hover:text-white transition-all">
+          <ExternalLink className="h-4 w-4" />
+          {isPt ? 'Portal de Faturacao' : 'Billing Portal'}
+        </Link>
+      </div>
     </div>
   )
 }

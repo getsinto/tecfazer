@@ -1,181 +1,173 @@
 import { auth } from '@/lib/auth'
 import db from '@/lib/db'
-import { CreditCard, Folder, FileText, MessageSquare } from 'lucide-react'
+import { ShoppingBag, Folder, MessageSquare, CreditCard, ArrowRight, Clock, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
 
 export default async function PortalDashboardPage({ params }: { params: { locale: string } }) {
   const session = await auth()
   const isPt = params.locale === 'pt'
+  if (!session?.user?.email) return null
 
-  if (!session?.user?.email) {
-    return null
-  }
-
-  // Fetch client data
   const clientUser = await db.clientUser.findUnique({
     where: { email: session.user.email },
     include: {
-      projects: { take: 5, orderBy: { createdAt: 'desc' } },
-      documents: { take: 5, orderBy: { uploadedAt: 'desc' } },
-      tickets: { where: { status: 'OPEN' } },
+      projects: { take: 3, orderBy: { createdAt: 'desc' } },
+      documents: { take: 3, orderBy: { uploadedAt: 'desc' } },
+      tickets: { where: { status: 'OPEN' }, take: 3, orderBy: { createdAt: 'desc' } },
     },
   }).catch(() => null)
 
-  // Fetch active subscription
-  const activeOrder = await db.order.findFirst({
-    where: {
-      customerEmail: session.user.email,
-      status: 'PAID',
-    },
-    include: { plan: true },
+  const orders = await db.order.findMany({
+    where: { customerEmail: session.user.email },
     orderBy: { createdAt: 'desc' },
-  }).catch(() => null)
+    take: 5,
+  }).catch(() => [])
+
+  const activeOrders = orders.filter(o => o.status === 'PAID')
+  const firstName = session.user?.name?.split(' ')[0] || (isPt ? 'Cliente' : 'Client')
+  const hour = new Date().getHours()
+  const greeting = isPt
+    ? hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+    : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   const stats = [
-    {
-      name: isPt ? 'Projetos Ativos' : 'Active Projects',
-      value: clientUser?.projects.length || 0,
-      icon: Folder,
-      href: `/${params.locale}/portal/projetos`,
-      color: 'text-blue-600 bg-blue-100',
-    },
-    {
-      name: isPt ? 'Documentos' : 'Documents',
-      value: clientUser?.documents.length || 0,
-      icon: FileText,
-      href: `/${params.locale}/portal/documentos`,
-      color: 'text-green-600 bg-green-100',
-    },
-    {
-      name: isPt ? 'Tickets Abertos' : 'Open Tickets',
-      value: clientUser?.tickets.length || 0,
-      icon: MessageSquare,
-      href: `/${params.locale}/portal/tickets`,
-      color: 'text-orange-600 bg-orange-100',
-    },
-    {
-      name: isPt ? 'Subscrição' : 'Subscription',
-      value: activeOrder ? (isPt ? 'Ativa' : 'Active') : (isPt ? 'Nenhuma' : 'None'),
-      icon: CreditCard,
-      href: `/${params.locale}/portal/faturacao`,
-      color: 'text-purple-600 bg-purple-100',
-    },
+    { label: isPt ? 'Servicos Ativos' : 'Active Services', value: activeOrders.length, icon: ShoppingBag, color: 'from-[#1B7A8A] to-cyan-500', href: `/${params.locale}/portal/servicos` },
+    { label: isPt ? 'Projetos' : 'Projects', value: clientUser?.projects.length || 0, icon: Folder, color: 'from-violet-500 to-purple-600', href: `/${params.locale}/portal/projetos` },
+    { label: isPt ? 'Mensagens' : 'Messages', value: clientUser?.tickets.length || 0, icon: MessageSquare, color: 'from-orange-500 to-amber-500', href: `/${params.locale}/portal/tickets` },
+    { label: isPt ? 'Pagamentos' : 'Payments', value: orders.length, icon: CreditCard, color: 'from-emerald-500 to-teal-500', href: `/${params.locale}/portal/faturacao` },
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-6xl">
+
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">
-          {isPt ? 'Bem-vindo de volta' : 'Welcome back'}, {session.user.name}!
-        </h1>
-        <p className="text-gray-600">
-          {isPt ? 'Aqui está um resumo da sua conta' : "Here's a summary of your account"}
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <p className="text-sm text-slate-500 mb-1">{greeting},</p>
+          <h1 className="text-3xl font-black text-slate-900">{firstName} 👋</h1>
+          <p className="text-slate-500 mt-1">
+            {isPt ? 'Bem-vindo ao seu painel de cliente.' : 'Welcome to your client dashboard.'}
+          </p>
+        </div>
+        <Link href={`/${params.locale}/servicos`}
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#1B7A8A] to-[#F5A623] px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
+          {isPt ? 'Comprar Servico' : 'Buy Service'}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <Link
-            key={stat.name}
-            href={stat.href}
-            className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center`}>
-                <stat.icon className="w-6 h-6" />
-              </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {stats.map(s => (
+          <Link key={s.label} href={s.href}
+            className="group rounded-2xl bg-white p-5 shadow-sm border border-slate-200 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+            <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${s.color} shadow-md`}>
+              <s.icon className="h-5 w-5 text-white" />
             </div>
-            <p className="text-gray-600 text-sm mb-1">{stat.name}</p>
-            <p className="text-3xl font-bold">{stat.value}</p>
+            <p className="text-2xl font-black text-slate-900">{s.value}</p>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">{s.label}</p>
           </Link>
         ))}
       </div>
 
-      {/* Active Subscription */}
-      {activeOrder && (
-        <div className="bg-gradient-to-r from-brand-teal to-brand-orange rounded-xl p-6 text-white">
-          <h2 className="text-2xl font-bold mb-2">
-            {isPt ? 'Subscrição Ativa' : 'Active Subscription'}
-          </h2>
-          <p className="text-white/90 mb-4">
-            {isPt ? activeOrder.plan.namePt : activeOrder.plan.nameEn}
-          </p>
-          <div className="flex items-center gap-4">
-            <div>
-              <p className="text-sm text-white/80">{isPt ? 'Valor' : 'Amount'}</p>
-              <p className="text-2xl font-bold">
-                €{Number(activeOrder.amount).toFixed(2)}/{activeOrder.billingCycle === 'MONTHLY' ? (isPt ? 'mês' : 'month') : (isPt ? 'ano' : 'year')}
-              </p>
-            </div>
-            <Link
-              href={`/${params.locale}/portal/faturacao`}
-              className="ml-auto px-6 py-2 bg-white text-brand-teal font-medium rounded-lg hover:shadow-lg transition-all"
-            >
-              {isPt ? 'Gerir' : 'Manage'}
-            </Link>
-          </div>
-        </div>
-      )}
+      <div className="grid gap-6 lg:grid-cols-2">
 
-      {/* Recent Projects */}
-      {clientUser && clientUser.projects.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">{isPt ? 'Projetos Recentes' : 'Recent Projects'}</h2>
-            <Link
-              href={`/${params.locale}/portal/projetos`}
-              className="text-brand-teal hover:text-brand-orange transition-colors font-medium"
-            >
+        {/* Active Services */}
+        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 className="font-bold text-slate-900">{isPt ? 'Servicos Ativos' : 'Active Services'}</h2>
+            <Link href={`/${params.locale}/portal/servicos`} className="text-xs font-semibold text-[#1B7A8A] hover:underline">
               {isPt ? 'Ver todos' : 'View all'} →
             </Link>
           </div>
-          <div className="space-y-4">
-            {clientUser.projects.map((project) => (
-              <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg hover:border-brand-teal transition-colors">
-                <div>
-                  <h3 className="font-semibold">{project.title}</h3>
-                  <p className="text-sm text-gray-600">
-                    {new Date(project.createdAt).toLocaleDateString(isPt ? 'pt-PT' : 'en-US')}
+          <div className="divide-y divide-slate-50">
+            {activeOrders.length > 0 ? activeOrders.slice(0, 3).map(order => (
+              <div key={order.id} className="flex items-center gap-4 px-6 py-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm truncate">
+                    {(order as any).serviceTitle || (order as any).plan?.namePt || 'Service'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {new Date(order.createdAt).toLocaleDateString(isPt ? 'pt-PT' : 'en-US')}
                   </p>
                 </div>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
                   {isPt ? 'Ativo' : 'Active'}
                 </span>
               </div>
-            ))}
+            )) : (
+              <div className="px-6 py-10 text-center">
+                <ShoppingBag className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                <p className="text-sm text-slate-500 mb-3">{isPt ? 'Nenhum servico ainda' : 'No services yet'}</p>
+                <Link href={`/${params.locale}/servicos`}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#1B7A8A] px-4 py-2 text-xs font-bold text-white hover:bg-[#156570] transition-colors">
+                  {isPt ? 'Explorar Servicos' : 'Explore Services'}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link
-          href={`/${params.locale}/portal/tickets`}
-          className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <MessageSquare className="w-8 h-8 text-brand-teal mb-4" />
-          <h3 className="text-xl font-bold mb-2">
-            {isPt ? 'Criar Ticket' : 'Create Ticket'}
-          </h3>
-          <p className="text-gray-600">
-            {isPt ? 'Precisa de ajuda? Abra um ticket de suporte' : 'Need help? Open a support ticket'}
-          </p>
-        </Link>
+        {/* Recent Messages */}
+        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 className="font-bold text-slate-900">{isPt ? 'Mensagens Recentes' : 'Recent Messages'}</h2>
+            <Link href={`/${params.locale}/portal/tickets`} className="text-xs font-semibold text-[#1B7A8A] hover:underline">
+              {isPt ? 'Ver todas' : 'View all'} →
+            </Link>
+          </div>
+          <div className="divide-y divide-slate-50">
+            {clientUser?.tickets && clientUser.tickets.length > 0 ? clientUser.tickets.map(ticket => (
+              <div key={ticket.id} className="flex items-center gap-4 px-6 py-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-orange-50">
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm truncate">{ticket.subject}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {new Date(ticket.createdAt).toLocaleDateString(isPt ? 'pt-PT' : 'en-US')}
+                  </p>
+                </div>
+                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">
+                  {isPt ? 'Aberto' : 'Open'}
+                </span>
+              </div>
+            )) : (
+              <div className="px-6 py-10 text-center">
+                <MessageSquare className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                <p className="text-sm text-slate-500 mb-3">{isPt ? 'Nenhuma mensagem' : 'No messages'}</p>
+                <Link href={`/${params.locale}/portal/tickets`}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-700 transition-colors">
+                  {isPt ? 'Enviar Mensagem' : 'Send Message'}
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-        <Link
-          href={`/${params.locale}/contacto`}
-          className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <Folder className="w-8 h-8 text-brand-orange mb-4" />
-          <h3 className="text-xl font-bold mb-2">
-            {isPt ? 'Novo Projeto' : 'New Project'}
-          </h3>
-          <p className="text-gray-600">
-            {isPt ? 'Tem uma nova ideia? Vamos conversar' : 'Have a new idea? Let\'s talk'}
-          </p>
-        </Link>
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {[
+          { icon: ShoppingBag, label: isPt ? 'Comprar Servico' : 'Buy Service', href: `/${params.locale}/servicos`, color: 'bg-[#1B7A8A]/10 text-[#1B7A8A]' },
+          { icon: MessageSquare, label: isPt ? 'Nova Mensagem' : 'New Message', href: `/${params.locale}/portal/tickets`, color: 'bg-orange-50 text-orange-600' },
+          { icon: TrendingUp, label: isPt ? 'Ver Progresso' : 'View Progress', href: `/${params.locale}/portal/projetos`, color: 'bg-violet-50 text-violet-600' },
+          { icon: CreditCard, label: isPt ? 'Faturacao' : 'Billing', href: `/${params.locale}/portal/faturacao`, color: 'bg-emerald-50 text-emerald-600' },
+        ].map(a => (
+          <Link key={a.label} href={a.href}
+            className="flex flex-col items-center gap-2 rounded-2xl bg-white border border-slate-200 p-5 text-center hover:shadow-md hover:-translate-y-0.5 transition-all">
+            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${a.color}`}>
+              <a.icon className="h-5 w-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-700">{a.label}</span>
+          </Link>
+        ))}
       </div>
     </div>
   )
