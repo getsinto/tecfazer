@@ -17,12 +17,10 @@ export default async function PortalLayout({
   try {
     session = await auth()
   } catch {
-    // auth() failed (missing secret, DB error etc) — redirect to login
-    redirect(`/${params.locale}/portal/login`)
+    // auth() failed — show login page
   }
 
   // Not authenticated — redirect to login
-  // Use the login page path directly to avoid middleware locale loops
   if (!session?.user) {
     redirect(`/${params.locale}/portal/login`)
   }

@@ -20,7 +20,13 @@ export default async function LocaleLayout({
   children: React.ReactNode
   params: { locale: string }
 }) {
-  const messages = await getMessages()
+  let messages = {}
+  try {
+    messages = await getMessages()
+  } catch {
+    // getMessages can fail if locale is not properly set
+    // Fall back to empty messages to prevent crash
+  }
 
   return (
     <html lang={locale} className={inter.variable}>
