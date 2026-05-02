@@ -242,7 +242,7 @@ export default function BuyServiceButton({
                   {/* Payment methods */}
                   <div className="flex items-center gap-2 justify-center flex-wrap">
                     <span className="text-xs text-slate-400">{isPt ? 'Aceita:' : 'Accepts:'}</span>
-                    {['VISA', 'MC', 'AMEX', 'PayPal', 'MB Way'].map(m => (
+                    {['VISA', 'MC', 'AMEX', 'Maestro'].map(m => (
                       <span key={m} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-600">{m}</span>
                     ))}
                   </div>
@@ -256,7 +256,7 @@ export default function BuyServiceButton({
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CreditCard className="h-5 w-5" />}
                     {loading
                       ? (isPt ? 'A processar...' : 'Processing...')
-                      : (isPt ? 'Pagar com Cartao / PayPal' : 'Pay with Card / PayPal')}
+                      : (isPt ? 'Pagar com Cartao' : 'Pay with Card')}
                   </button>
 
                   {/* Divider */}
