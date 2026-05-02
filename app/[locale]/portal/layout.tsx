@@ -17,7 +17,7 @@ export default async function PortalLayout({
   try {
     session = await auth()
   } catch {
-    // auth() failed — show login page
+    // auth() failed — redirect to login
   }
 
   // Not authenticated — redirect to login
