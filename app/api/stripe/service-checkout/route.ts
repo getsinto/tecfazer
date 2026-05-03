@@ -11,6 +11,9 @@ const schema = z.object({
   priceEur: z.number().positive(),
   locale: z.string().default('pt'),
   customerEmail: z.string().email().optional(),
+  customerName: z.string().optional(),
+  // Portal context — if buying from inside portal
+  portalUserId: z.string().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -29,14 +32,10 @@ export async function POST(req: NextRequest) {
         {
           price_data: {
             currency: 'eur',
-            unit_amount: Math.round(data.priceEur * 100), // cents
+            unit_amount: Math.round(data.priceEur * 100),
             product_data: {
               name: data.serviceTitle,
               description: data.serviceDescription,
-              images: [`${siteUrl}/images/og-image.png`],
-              metadata: {
-                serviceSlug: data.serviceSlug,
-              },
             },
           },
           quantity: 1,
@@ -52,6 +51,10 @@ export async function POST(req: NextRequest) {
         serviceSlug: data.serviceSlug,
         serviceTitle: data.serviceTitle,
         locale: data.locale,
+        customerName: data.customerName || '',
+        portalUserId: data.portalUserId || '',
+        // Flag to auto-create portal account
+        autoCreateAccount: data.customerEmail ? 'true' : 'false',
       },
       custom_text: {
         submit: {
