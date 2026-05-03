@@ -6,6 +6,11 @@ import PortalMobileNav from '@/components/portal/PortalMobileNav'
 
 export const dynamic = 'force-dynamic'
 
+// Icon map for server-side rendering in sidebar
+const ICON_MAP: Record<string, React.ElementType> = {
+  Home, FileText, Folder, MessageSquare, CreditCard, User, ShoppingBag, Bell,
+}
+
 export default async function PortalLayout({
   children,
   params,
@@ -28,13 +33,13 @@ export default async function PortalLayout({
   const isPt = params.locale === 'pt'
 
   const navigation = [
-    { name: 'Dashboard', href: `/${params.locale}/portal/dashboard`, icon: Home },
-    { name: isPt ? 'Os Meus Servicos' : 'My Services', href: `/${params.locale}/portal/servicos`, icon: ShoppingBag },
-    { name: isPt ? 'Projetos' : 'Projects', href: `/${params.locale}/portal/projetos`, icon: Folder },
-    { name: isPt ? 'Mensagens' : 'Messages', href: `/${params.locale}/portal/tickets`, icon: MessageSquare },
-    { name: isPt ? 'Documentos' : 'Documents', href: `/${params.locale}/portal/documentos`, icon: FileText },
-    { name: isPt ? 'Faturacao' : 'Billing', href: `/${params.locale}/portal/faturacao`, icon: CreditCard },
-    { name: isPt ? 'Perfil' : 'Profile', href: `/${params.locale}/portal/perfil`, icon: User },
+    { name: 'Dashboard', href: `/${params.locale}/portal/dashboard`, iconName: 'Home' },
+    { name: isPt ? 'Os Meus Servicos' : 'My Services', href: `/${params.locale}/portal/servicos`, iconName: 'ShoppingBag' },
+    { name: isPt ? 'Projetos' : 'Projects', href: `/${params.locale}/portal/projetos`, iconName: 'Folder' },
+    { name: isPt ? 'Mensagens' : 'Messages', href: `/${params.locale}/portal/tickets`, iconName: 'MessageSquare' },
+    { name: isPt ? 'Documentos' : 'Documents', href: `/${params.locale}/portal/documentos`, iconName: 'FileText' },
+    { name: isPt ? 'Faturacao' : 'Billing', href: `/${params.locale}/portal/faturacao`, iconName: 'CreditCard' },
+    { name: isPt ? 'Perfil' : 'Profile', href: `/${params.locale}/portal/perfil`, iconName: 'User' },
   ]
 
   const userInitial = session.user?.name?.charAt(0)?.toUpperCase() || 'U'
@@ -74,13 +79,16 @@ export default async function PortalLayout({
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-          {navigation.map((item) => (
-            <Link key={item.name} href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/50 hover:text-white hover:bg-white/8 transition-all text-sm font-medium group">
-              <item.icon className="w-4 h-4 flex-shrink-0 group-hover:text-[#1B7A8A] transition-colors" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
+          {navigation.map((item) => {
+            const Icon = ICON_MAP[item.iconName] || Home
+            return (
+              <Link key={item.name} href={item.href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/50 hover:text-white hover:bg-white/8 transition-all text-sm font-medium group">
+                <Icon className="w-4 h-4 flex-shrink-0 group-hover:text-[#1B7A8A] transition-colors" />
+                <span>{item.name}</span>
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Bottom */}
