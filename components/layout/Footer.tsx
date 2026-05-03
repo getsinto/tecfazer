@@ -30,7 +30,6 @@ export default function Footer({ locale }: FooterProps) {
     { href: `/${locale}/privacidade`, label: t('privacy') },
     { href: `/${locale}/termos`, label: t('terms') },
     { href: `/${locale}/reembolso`, label: locale === 'pt' ? 'Reembolso' : 'Refunds' },
-    { href: `/${locale}/cookies`, label: t('cookie') },
   ]
 
   const socialLinks = [
