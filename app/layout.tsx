@@ -24,7 +24,6 @@ export default function RootLayout({
   return (
     <html lang="pt" suppressHydrationWarning>
       <head>
-        {/* Google Analytics */}
         {GA_ID && (
           <>
             <Script
@@ -42,7 +41,7 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-screen bg-background font-sans antialiased`}>
         <SessionProvider>
           {children}
         </SessionProvider>
