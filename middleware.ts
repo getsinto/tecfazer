@@ -23,9 +23,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Run intl middleware for all public routes
-  // Portal auth protection is handled in the portal layout server component
-  return intlMiddleware(request)
+  // Run intl middleware and inject pathname header for layout detection
+  const response = intlMiddleware(request)
+
+  // Add pathname header so layouts can detect portal routes
+  if (response) {
+    response.headers.set('x-pathname', pathname)
+  }
+
+  return response
 }
 
 export const config = {
