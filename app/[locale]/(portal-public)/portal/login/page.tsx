@@ -147,8 +147,8 @@ export default function PortalLoginPage({ params }: { params: { locale: string }
               <div className="mt-6 pt-6 border-t border-slate-100 text-center">
                 <p className="text-sm text-slate-500">
                   {isPt ? 'Nao tem conta? ' : "Don't have an account? "}
-                  <Link href={`/${params.locale}/contacto`} className="font-bold text-[#1B7A8A] hover:underline">
-                    {isPt ? 'Compre um servico' : 'Purchase a service'}
+                  <Link href={`/${params.locale}/portal/register`} className="font-bold text-[#1B7A8A] hover:underline">
+                    {isPt ? 'Criar conta gratuita' : 'Create free account'}
                   </Link>
                 </p>
               </div>
